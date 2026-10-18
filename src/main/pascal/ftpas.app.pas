@@ -17,7 +17,7 @@ unit ftpas.app;
 interface
 
 uses
-  Classes, SysUtils, ctypes,
+  Classes, SysUtils, Math, ctypes,
   ftpas.api, ftpas.types, ftpas.canvas;
 
 type
@@ -146,6 +146,7 @@ end;
 
 procedure TFtApp.Initialize();
 begin
+  SetExceptionMask([exInvalidOp, exDenormalized, exZeroDivide, exOverflow, exUnderflow, exPrecision]);
   if not FInitialized then
   begin
     if Assigned(ft_init) then
@@ -483,6 +484,7 @@ begin
 end;
 
 initialization
+  SetExceptionMask([exInvalidOp, exDenormalized, exZeroDivide, exOverflow, exUnderflow, exPrecision]);
   FtApp.Initialize();
 
 finalization
