@@ -91,6 +91,10 @@ type
     procedure SetIconPosition(AValue: TFtButtonIconPosition);
     function  GetIconGap: Integer;
     procedure SetIconGap(AValue: Integer);
+    function  GetAlignment: TFtTextAlign;
+    procedure SetAlignment(AValue: TFtTextAlign);
+    function  GetPaddingX: Double;
+    procedure SetPaddingX(AValue: Double);
 
     procedure SetOnClick(AValue: TFtButtonClickEvent);
     procedure SetOnHover(AValue: TFtButtonHoverEvent);
@@ -120,6 +124,8 @@ type
     property State: TFtButtonState read GetState;
     property IconPosition: TFtButtonIconPosition read GetIconPosition write SetIconPosition;
     property IconGap: Integer read GetIconGap write SetIconGap;
+    property Alignment: TFtTextAlign read GetAlignment write SetAlignment;
+    property PaddingX: Double read GetPaddingX write SetPaddingX;
 
     property OnClick: TFtButtonClickEvent read FOnClick write SetOnClick;
     property OnHover: TFtButtonHoverEvent read FOnHover write SetOnHover;
@@ -841,6 +847,34 @@ procedure TFtButton.SetIconGap(AValue: Integer);
 begin
   if (Handle <> nil) and Assigned(ft_button_set_icon_gap) then
     ft_button_set_icon_gap(Handle, AValue);
+end;
+
+function TFtButton.GetAlignment: TFtTextAlign;
+begin
+  if (Handle <> nil) and Assigned(ft_button_get_align) then
+    Result := TFtTextAlign(ft_button_get_align(Handle))
+  else
+    Result := ftaCenter;
+end;
+
+procedure TFtButton.SetAlignment(AValue: TFtTextAlign);
+begin
+  if (Handle <> nil) and Assigned(ft_button_set_align) then
+    ft_button_set_align(Handle, Ord(AValue));
+end;
+
+function TFtButton.GetPaddingX: Double;
+begin
+  if (Handle <> nil) and Assigned(ft_button_get_padding_x) then
+    Result := ft_button_get_padding_x(Handle)
+  else
+    Result := 8.0;
+end;
+
+procedure TFtButton.SetPaddingX(AValue: Double);
+begin
+  if (Handle <> nil) and Assigned(ft_button_set_padding_x) then
+    ft_button_set_padding_x(Handle, AValue);
 end;
 
 procedure TFtButton.SetIconFile(const APath: string);

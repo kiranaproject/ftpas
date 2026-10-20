@@ -421,6 +421,10 @@ var
   ft_button_get_icon_gap: function(button: TFtWidget): cint32; cdecl;
   ft_button_on_paint_icon: procedure(button: TFtWidget; callback: TFtButtonPaintCallback; user_data: Pointer); cdecl;
   ft_button_on_paint: procedure(button: TFtWidget; callback: TFtButtonPaintCallback; user_data: Pointer); cdecl;
+  ft_button_set_align: procedure(button: TFtWidget; alignment: cint32); cdecl;
+  ft_button_get_align: function(button: TFtWidget): cint32; cdecl;
+  ft_button_set_padding_x: procedure(button: TFtWidget; padding_x: Double); cdecl;
+  ft_button_get_padding_x: function(button: TFtWidget): Double; cdecl;
 
   { Window Buttons }
   ft_window_button_create: function(parent: TFtWidget; x, y, w, h, kind, style: cint32): TFtWidget; cdecl;
@@ -1301,6 +1305,10 @@ begin
   Pointer(ft_button_get_icon_gap) := BindFunc('ft_button_get_icon_gap');
   Pointer(ft_button_on_paint_icon) := BindFunc('ft_button_on_paint_icon');
   Pointer(ft_button_on_paint) := BindFunc('ft_button_on_paint');
+  Pointer(ft_button_set_align) := BindFunc('ft_button_set_align');
+  Pointer(ft_button_get_align) := BindFunc('ft_button_get_align');
+  Pointer(ft_button_set_padding_x) := BindFunc('ft_button_set_padding_x');
+  Pointer(ft_button_get_padding_x) := BindFunc('ft_button_get_padding_x');
 
   { Bind Window Buttons }
   Pointer(ft_window_button_create) := BindFunc('ft_window_button_create');

@@ -276,6 +276,14 @@ begin
     btn.Enabled := False;
     AssertFalse('Button enabled should be false', btn.Enabled);
     btn.Enabled := True;
+    AssertEquals('Button default alignment should be center', Ord(ftaCenter), Ord(btn.Alignment));
+    btn.Alignment := ftaLeft;
+    AssertEquals('Button alignment should update to left', Ord(ftaLeft), Ord(btn.Alignment));
+    btn.Alignment := ftaRight;
+    AssertEquals('Button alignment should update to right', Ord(ftaRight), Ord(btn.Alignment));
+    AssertEquals('Button default padding_x should be 8.0', 8.0, btn.PaddingX);
+    btn.PaddingX := 12.0;
+    AssertEquals('Button padding_x should update to 12.0', 12.0, btn.PaddingX);
   finally
     win.Free();
   end;
