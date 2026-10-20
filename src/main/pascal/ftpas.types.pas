@@ -44,7 +44,8 @@ type
     ftwtDropdownMenu = FT_WINDOW_TYPE_DROPDOWN_MENU,
     ftwtTooltip      = FT_WINDOW_TYPE_TOOLTIP,
     ftwtUtility      = FT_WINDOW_TYPE_UTILITY,
-    ftwtDock         = FT_WINDOW_TYPE_DOCK
+    ftwtDock         = FT_WINDOW_TYPE_DOCK,
+    ftwtDesktop      = FT_WINDOW_TYPE_DESKTOP
   );
 
   TFtAlignSelf = (

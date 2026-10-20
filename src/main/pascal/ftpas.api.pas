@@ -44,6 +44,7 @@ const
   FT_WINDOW_TYPE_TOOLTIP       = 4;
   FT_WINDOW_TYPE_UTILITY       = 5;
   FT_WINDOW_TYPE_DOCK          = 6;
+  FT_WINDOW_TYPE_DESKTOP       = 7;
 
   { Micro-Flexbox Child Alignments }
   FT_ALIGN_SELF_AUTO    = 0;
