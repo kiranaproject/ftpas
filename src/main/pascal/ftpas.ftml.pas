@@ -22,12 +22,26 @@ uses
   Classes, SysUtils, Math,
   floriajs,
   ftpas.types, ftpas.api, ftpas.widget, ftpas.window,
-  ftpas.controls, ftpas.layouts;
+  ftpas.controls, ftpas.layouts, ftpas.creative, ftpas.menus,
+  ftpas.ftml.res;
 
 type
   { Forward Declarations }
   TFtFTMLHost = class;
   TFtFTMLWindow = class;
+  TFtFTMLForm = class;
+
+  { Notified for every widget instantiated from markup. Host applications use
+    this to attach native behaviour (e.g. a terminal view on a DrawingArea). }
+  TFtFTMLWidgetCreatedEvent = procedure(Sender: TFtFTMLHost;
+    AItem: TFloriaFTMLItem; AWidget: TFtWidget) of object;
+
+  { Menu item bindings (menus are not widgets, so they are tracked apart). }
+  PFtFTMLMenuItemBinding = ^TFtFTMLMenuItemBinding;
+  TFtFTMLMenuItemBinding = record
+    Item: TFloriaFTMLItem;
+    MenuItem: TFtMenuItem;
+  end;
 
   { Mapping item that binds an FTML item with its corresponding native TFtWidget }
   PFtFTMLItemBinding = ^TFtFTMLItemBinding;
@@ -56,6 +70,9 @@ type
     procedure HandleSwitchToggle(Sender: TFtSwitch; AToggled: Boolean);
     procedure HandleCheckBoxChange(Sender: TFtCheckBox; AChecked: Boolean);
     procedure HandleSliderChange(Sender: TFtSlider; AValue: Double);
+    procedure HandleTextAreaChange(Sender: TFtWidget; const AText: string);
+    procedure HandleRadioChange(Sender: TFtRadioButton; AChecked: Boolean);
+    procedure HandleMenuItemClick(Sender: TFtMenuItem);
   end;
 
   { TFtFTMLHost — Container widget hosting an FTML component hierarchy }
@@ -66,9 +83,15 @@ type
     FRootWidget: TFtWidget;
     FBindings: array of TFtFTMLItemBinding;
     FBindingCount: Integer;
+    FMenuItems: array of TFtFTMLMenuItemBinding;
+    FMenuItemCount: Integer;
     FBridges: TFPList;
     FIsSyncing: Boolean;
     FLastError: string;
+    FOnWidgetCreated: TFtFTMLWidgetCreatedEvent;
+
+    procedure AddMenuItemBinding(AItem: TFloriaFTMLItem; AMenuItem: TFtMenuItem);
+    procedure DoWidgetCreated(AItem: TFloriaFTMLItem; AWidget: TFtWidget);
 
     procedure ClearBindings();
     procedure RegisterBinding(AItem: TFloriaFTMLItem; AWidget: TFtWidget);
@@ -84,6 +107,7 @@ type
     function  Evaluate(const AScript: string): TFloriaJSValue;
     function  FindItem(const AId: string): TFloriaFTMLItem;
     function  FindWidget(const AId: string): TFtWidget;
+    function  FindMenuItem(const AId: string): TFtMenuItem;
     procedure RegisterFunction(const AName: string; AProc: TFloriaJSNativeProc);
 
     procedure SyncProperties();
@@ -94,6 +118,8 @@ type
     property RootWidget: TFtWidget read FRootWidget;
     property LastError: string read FLastError;
     property HasErrors: Boolean read GetHasErrors;
+    property OnWidgetCreated: TFtFTMLWidgetCreatedEvent
+      read FOnWidgetCreated write FOnWidgetCreated;
   end;
 
   { TFtFTMLWindow — Window class hosting an FTML component tree }
@@ -114,6 +140,7 @@ type
     function  Evaluate(const AScript: string): TFloriaJSValue;
     function  FindItem(const AId: string): TFloriaFTMLItem;
     function  FindWidget(const AId: string): TFtWidget;
+    function  FindMenuItem(const AId: string): TFtMenuItem;
     procedure RegisterFunction(const AName: string; AProc: TFloriaJSNativeProc);
     procedure SyncProperties();
 
@@ -122,7 +149,35 @@ type
     property RootItem: TFloriaFTMLItem read GetRootItem;
   end;
 
+  { TFtFTMLForm — FTML design-bound window, the .lfm counterpart.
+
+    The layout is fetched from the embedded resource registry first (see
+    tools/ftml_embed.pas and ftpas.ftml.res), so no markup file has to be
+    shipped with the executable. During UI development, setting the
+    FTML_DESIGN_DIR environment variable or placing <design>.ftml next to
+    the executable overrides the embedded copy. }
+  TFtFTMLForm = class(TFtFTMLWindow)
+  private
+    FDesignName: string;
+    FDesignFileName: string;
+    FExternalDesign: Boolean;
+  protected
+    function  GetDefaultDesignName(): string; virtual;
+    function  FindDesignFile(const AName: string): string;
+    function  ResolveDesign(out ASource, AFileName: string): Boolean; virtual;
+  public
+    constructor Create(AWidth, AHeight: Integer; const ATitle: string = '';
+      const ADesignName: string = ''); reintroduce;
+    procedure LoadDesign(); virtual;
+
+    property DesignName: string read FDesignName;
+    property DesignFileName: string read FDesignFileName;
+    property ExternalDesign: Boolean read FExternalDesign;
+  end;
+
 implementation
+
+function FindAncestorWindow(AWidget: TFtWidget): TFtWindow; forward;
 
 { TFtFTMLSignalBridge }
 
@@ -175,6 +230,30 @@ begin
   end;
 end;
 
+procedure TFtFTMLSignalBridge.HandleTextAreaChange(Sender: TFtWidget; const AText: string);
+begin
+  if (FHost <> nil) and (FItem <> nil) and not FHost.FIsSyncing then
+  begin
+    FItem.SetProperty('text', JSMakeString(AText));
+    FHost.EmitItemSignal(FItem, 'textChanged');
+  end;
+end;
+
+procedure TFtFTMLSignalBridge.HandleRadioChange(Sender: TFtRadioButton; AChecked: Boolean);
+begin
+  if (FHost <> nil) and (FItem <> nil) and not FHost.FIsSyncing then
+  begin
+    FItem.SetProperty('checked', JSMakeBoolean(AChecked));
+    FHost.EmitItemSignal(FItem, 'toggled');
+  end;
+end;
+
+procedure TFtFTMLSignalBridge.HandleMenuItemClick(Sender: TFtMenuItem);
+begin
+  if FHost <> nil then
+    FHost.EmitItemSignal(FItem, 'clicked');
+end;
+
 { TFtFTMLHost }
 
 constructor TFtFTMLHost.Create(AParent: TFtWidget; AX, AY, AW, AH: Integer);
@@ -187,6 +266,8 @@ begin
   FRootWidget := nil;
   FBindingCount := 0;
   SetLength(FBindings, 0);
+  FMenuItemCount := 0;
+  SetLength(FMenuItems, 0);
   FBridges := TFPList.Create();
   FIsSyncing := False;
   FLastError := '';
@@ -198,6 +279,39 @@ begin
   FreeAndNil(FBridges);
   FreeAndNil(FEngine);
   inherited Destroy();
+end;
+
+procedure TFtFTMLHost.AddMenuItemBinding(AItem: TFloriaFTMLItem; AMenuItem: TFtMenuItem);
+begin
+  if (AItem = nil) or (AMenuItem = nil) then Exit;
+  if FMenuItemCount >= Length(FMenuItems) then
+  begin
+    if Length(FMenuItems) = 0 then
+      SetLength(FMenuItems, 8)
+    else
+      SetLength(FMenuItems, Length(FMenuItems) * 2);
+  end;
+  FMenuItems[FMenuItemCount].Item := AItem;
+  FMenuItems[FMenuItemCount].MenuItem := AMenuItem;
+  Inc(FMenuItemCount);
+end;
+
+procedure TFtFTMLHost.DoWidgetCreated(AItem: TFloriaFTMLItem; AWidget: TFtWidget);
+begin
+  if Assigned(FOnWidgetCreated) and (AItem <> nil) and (AWidget <> nil) then
+    FOnWidgetCreated(Self, AItem, AWidget);
+end;
+
+function TFtFTMLHost.FindMenuItem(const AId: string): TFtMenuItem;
+var
+  i: Integer;
+begin
+  for i := 0 to FMenuItemCount - 1 do
+  begin
+    if (FMenuItems[i].Item <> nil) and (FMenuItems[i].Item.Id = AId) then
+      Exit(FMenuItems[i].MenuItem);
+  end;
+  Result := nil;
 end;
 
 procedure TFtFTMLHost.ClearBindings();
@@ -213,6 +327,8 @@ begin
 
   FBindingCount := 0;
   SetLength(FBindings, 0);
+  FMenuItemCount := 0;
+  SetLength(FMenuItems, 0);
 
   if (FRootWidget <> nil) and (FRootWidget <> Self) then
   begin
@@ -339,7 +455,17 @@ var
   colTmpl, rowTmpl: string;
   padVal, colGap, rowGap, flexG, flexS, flexB: Double;
   nCols, nRows, gridC, gridR, colS, rowS: Integer;
-  i: Integer;
+  i, j: Integer;
+  childrenHandled: Boolean;
+  tabItem, subItem: TFloriaFTMLItem;
+  page: TFtTabPage;
+  pageWidget: TFtWidget;
+  mi: TFtMenuItem;
+  popup: TFtPopupMenu;
+  win: TFtWindow;
+  bridge: TFtFTMLSignalBridge;
+  fnt, hintStr, clsStr, titleStr: string;
+  opa: Double;
 begin
   if AItem = nil then Exit(nil);
 
@@ -354,6 +480,7 @@ begin
     ih := Self.Height;
 
   W := nil;
+  childrenHandled := False;
 
   if (AItem = FRootItem) and ((AItem.TypeName = 'Rectangle') or (AItem.TypeName = 'Card')) then
   begin
@@ -611,12 +738,168 @@ begin
     if (colGap > 0.0) or (rowGap > 0.0) then
       TFtGrid(W).SetGaps(colGap, rowGap);
   end
+  else if (AItem.TypeName = 'DrawingArea') or (AItem.TypeName = 'Canvas') then
+  begin
+    if iw <= 0 then iw := 200;
+    if ih <= 0 then ih := 120;
+    W := TFtDrawingArea.Create(AParentWidget, ix, iy, iw, ih);
+  end
+  else if AItem.TypeName = 'TextArea' then
+  begin
+    if iw <= 0 then iw := 240;
+    if ih <= 0 then ih := 120;
+    W := TFtTextArea.Create(AParentWidget, ix, iy, iw, ih,
+      AItem.GetPropertyAsString('text', ''));
+    ph := AItem.GetPropertyAsString('placeholder', '');
+    if ph <> '' then
+      TFtTextArea(W).Placeholder := ph;
+    if AItem.GetPropertyAsBoolean('readOnly', False) then
+      TFtTextArea(W).ReadOnly := True;
+    AttachSignals(AItem, W);
+  end
+  else if (AItem.TypeName = 'Radio') or (AItem.TypeName = 'RadioButton') then
+  begin
+    if iw <= 0 then iw := 160;
+    if ih <= 0 then ih := 28;
+    W := TFtRadioButton.Create(AParentWidget, ix, iy, iw, ih,
+      AItem.GetPropertyAsString('text', ''));
+    TFtRadioButton(W).Checked := AItem.GetPropertyAsBoolean('checked', False);
+    AttachSignals(AItem, W);
+  end
+  else if AItem.TypeName = 'Image' then
+  begin
+    if iw <= 0 then iw := 64;
+    if ih <= 0 then ih := 64;
+    W := TFtImage.Create(AParentWidget, ix, iy, iw, ih,
+      AItem.GetPropertyAsString('src', AItem.GetPropertyAsString('file', '')));
+  end
+  else if AItem.TypeName = 'ScrollBar' then
+  begin
+    if iw <= 0 then iw := 12;
+    if ih <= 0 then ih := 160;
+    if LowerCase(AItem.GetPropertyAsString('orientation', 'vertical')) = 'horizontal' then
+      W := TFtScrollBar.Create(AParentWidget, ix, iy, iw, ih, ftsboHorizontal)
+    else
+      W := TFtScrollBar.Create(AParentWidget, ix, iy, iw, ih, ftsboVertical);
+  end
+  else if AItem.TypeName = 'Splitter' then
+  begin
+    if iw <= 0 then iw := 6;
+    if ih <= 0 then ih := 160;
+    if LowerCase(AItem.GetPropertyAsString('orientation', 'vertical')) = 'horizontal' then
+      W := TFtSplitter.Create(AParentWidget, ix, iy, iw, ih, ftspoHorizontal)
+    else
+      W := TFtSplitter.Create(AParentWidget, ix, iy, iw, ih, ftspoVertical);
+  end
+  else if AItem.TypeName = 'Spacer' then
+  begin
+    W := TFtSpacer.Create(AParentWidget);
+    W.SetBounds(ix, iy, iw, ih);
+  end
+  else if AItem.TypeName = 'Separator' then
+  begin
+    if ih <= 0 then ih := 1;
+    W := TFtContainer.Create(AParentWidget, ix, iy, iw, ih);
+    TFtContainer(W).ScrollBarMode := ftsbmNone;
+    W.Style := 'background-color: ' + AItem.GetPropertyAsString('color', '#45475a') + ';';
+  end
+  else if (AItem.TypeName = 'Notebook') or (AItem.TypeName = 'Tabs') then
+  begin
+    if (iw <= 0) and (AParentWidget <> nil) and (AParentWidget.Width > ix) then
+      iw := AParentWidget.Width - ix;
+    if (ih <= 0) and (AParentWidget <> nil) and (AParentWidget.Height > iy) then
+      ih := AParentWidget.Height - iy;
+    W := TFtNotebook.Create(AParentWidget, ix, iy, iw, ih);
+    childrenHandled := True;
+    for i := 0 to AItem.ChildCount() - 1 do
+    begin
+      tabItem := AItem.GetChild(i);
+      if (tabItem.TypeName = 'Tab') or (tabItem.TypeName = 'TabPage') or
+         (tabItem.TypeName = 'TabItem') then
+      begin
+        titleStr := tabItem.GetPropertyAsString('title', '');
+        if titleStr = '' then
+          titleStr := tabItem.GetPropertyAsString('text', 'Tab');
+        page := TFtNotebook(W).AddTab(titleStr,
+          tabItem.GetPropertyAsBoolean('closeable', True));
+        pageWidget := TFtWidget.Wrap(page.Handle, W, False);
+        RegisterBinding(tabItem, pageWidget);
+        DoWidgetCreated(tabItem, pageWidget);
+        for j := 0 to tabItem.ChildCount() - 1 do
+          BuildWidgetTree(tabItem.GetChild(j), pageWidget);
+      end
+      else
+        BuildWidgetTree(tabItem, W);
+    end;
+  end
+  else if (AItem.TypeName = 'MenuBar') or (AItem.TypeName = 'MainMenu') then
+  begin
+    win := FindAncestorWindow(AParentWidget);
+    if win = nil then
+      Exit(nil);
+    W := TFtMainMenu.Create(win);
+    childrenHandled := True;
+    for i := 0 to AItem.ChildCount() - 1 do
+    begin
+      tabItem := AItem.GetChild(i);
+      if tabItem.TypeName <> 'Menu' then Continue;
+      titleStr := tabItem.GetPropertyAsString('title', '');
+      if titleStr = '' then
+        titleStr := tabItem.GetPropertyAsString('text', 'Menu');
+      popup := TFtMainMenu(W).AddMenu(titleStr);
+      for j := 0 to tabItem.ChildCount() - 1 do
+      begin
+        subItem := tabItem.GetChild(j);
+        if subItem.TypeName = 'Separator' then
+          TFtPopupMenu(popup).AddSeparator()
+        else if (subItem.TypeName = 'MenuItem') or (subItem.TypeName = 'Action') then
+        begin
+          if subItem.GetPropertyAsBoolean('checkable', False) then
+            mi := TFtPopupMenu(popup).AddCheckItem(
+              subItem.GetPropertyAsString('text', ''),
+              subItem.GetPropertyAsBoolean('checked', False))
+          else
+            mi := TFtPopupMenu(popup).AddItem(
+              subItem.GetPropertyAsString('text', ''));
+          if subItem.HasProperty('shortcut') then
+            mi.Shortcut := subItem.GetPropertyAsString('shortcut', '');
+          bridge := TFtFTMLSignalBridge.Create(Self, subItem);
+          FBridges.Add(bridge);
+          mi.OnClick := @bridge.HandleMenuItemClick;
+          AddMenuItemBinding(subItem, mi);
+        end;
+      end;
+    end;
+  end
   else
   begin
     { Generic fallback container }
     W := TFtContainer.Create(AParentWidget, ix, iy, iw, ih);
     TFtContainer(W).ScrollBarMode := ftsbmNone;
     TFtContainer(W).SetPadding(0.0, 0.0);
+  end;
+
+  { Generic, type-independent presentation properties }
+  if W <> nil then
+  begin
+    fnt := AItem.GetPropertyAsString('font', '');
+    if fnt <> '' then
+      W.Font := fnt;
+    opa := AItem.GetPropertyAsNumber('opacity', 1.0);
+    if (opa >= 0.0) and (opa < 1.0) then
+      W.Opacity := opa;
+    if AItem.HasProperty('enabled') then
+      W.Enabled := AItem.GetPropertyAsBoolean('enabled', True);
+    hintStr := AItem.GetPropertyAsString('hint', '');
+    if hintStr = '' then
+      hintStr := AItem.GetPropertyAsString('tooltip', '');
+    if hintStr <> '' then
+      W.Hint := hintStr;
+    clsStr := AItem.GetPropertyAsString('styleClass', '');
+    if clsStr <> '' then
+      W.StyleClass := clsStr;
+    if AItem.Id <> '' then
+      W.StyleId := AItem.Id;
   end;
 
   // Apply child layout constraints on native widget
@@ -669,12 +952,27 @@ begin
   end;
 
   RegisterBinding(AItem, W);
+  DoWidgetCreated(AItem, W);
 
   { Recursively instantiate child items }
-  for i := 0 to AItem.ChildCount() - 1 do
-    BuildWidgetTree(AItem.GetChild(i), W);
+  if not childrenHandled then
+    for i := 0 to AItem.ChildCount() - 1 do
+      BuildWidgetTree(AItem.GetChild(i), W);
 
   Result := W;
+end;
+
+function FindAncestorWindow(AWidget: TFtWidget): TFtWindow;
+var
+  w: TFtWidget;
+begin
+  w := AWidget;
+  while (w <> nil) and not (w is TFtWindow) do
+    w := w.Parent;
+  if w is TFtWindow then
+    Result := TFtWindow(w)
+  else
+    Result := nil;
 end;
 
 function TFtFTMLHost.LoadString(const ASource: string): TFloriaFTMLItem;
@@ -883,12 +1181,21 @@ begin
         begin
           if (W <> Self) and not ((W.Parent is TFtFlexBox) or (W.Parent is TFtGrid)) then
           begin
-            curParent := W.Parent;
-            while (curParent <> nil) and (curParent <> Self) do
+            if W is TFtMainMenu then
             begin
-              Inc(ix, curParent.X);
-              Inc(iy, curParent.Y);
-              curParent := curParent.Parent;
+              ix := 0;
+              iy := 0;
+            end
+            else
+            begin
+              curParent := W.Parent;
+              while (curParent <> nil) and (curParent <> Self) do
+              begin
+                if curParent is TFtWindow then Break;
+                Inc(ix, curParent.X);
+                Inc(iy, curParent.Y);
+                curParent := curParent.Parent;
+              end;
             end;
             W.SetBounds(ix, iy, iw, ih);
           end;
@@ -991,6 +1298,11 @@ begin
   Result := FHost.FindWidget(AId);
 end;
 
+function TFtFTMLWindow.FindMenuItem(const AId: string): TFtMenuItem;
+begin
+  Result := FHost.FindMenuItem(AId);
+end;
+
 procedure TFtFTMLWindow.RegisterFunction(const AName: string; AProc: TFloriaJSNativeProc);
 begin
   FHost.RegisterFunction(AName, AProc);
@@ -999,6 +1311,106 @@ end;
 procedure TFtFTMLWindow.SyncProperties();
 begin
   FHost.SyncProperties();
+end;
+
+{ TFtFTMLForm }
+
+constructor TFtFTMLForm.Create(AWidth, AHeight: Integer; const ATitle: string;
+  const ADesignName: string);
+begin
+  inherited Create(AWidth, AHeight, ATitle);
+  if ADesignName <> '' then
+    FDesignName := ADesignName
+  else
+    FDesignName := GetDefaultDesignName();
+  FDesignFileName := '';
+  FExternalDesign := False;
+  LoadDesign();
+end;
+
+function TFtFTMLForm.GetDefaultDesignName(): string;
+begin
+  Result := ClassName;
+  if (Length(Result) > 1) and (Result[1] = 'T') then
+    Delete(Result, 1, 1);
+end;
+
+function TFtFTMLForm.FindDesignFile(const AName: string): string;
+var
+  dirs: array[0..4] of string;
+  i: Integer;
+  candidate: string;
+begin
+  Result := '';
+  if AName = '' then Exit;
+
+  dirs[0] := GetEnvironmentVariable('FTML_DESIGN_DIR');
+  dirs[1] := ExtractFilePath(ParamStr(0));
+  dirs[2] := IncludeTrailingPathDelimiter(GetCurrentDir());
+  dirs[3] := IncludeTrailingPathDelimiter(ExtractFilePath(ParamStr(0))) + 'design' + PathDelim;
+  dirs[4] := IncludeTrailingPathDelimiter(GetCurrentDir()) + 'design' + PathDelim;
+
+  for i := Low(dirs) to High(dirs) do
+  begin
+    if dirs[i] = '' then Continue;
+    candidate := IncludeTrailingPathDelimiter(dirs[i]) + AName + '.ftml';
+    if FileExists(candidate) then
+      Exit(candidate);
+    candidate := IncludeTrailingPathDelimiter(dirs[i]) + AName;
+    if FileExists(candidate) then
+      Exit(candidate);
+  end;
+end;
+
+function TFtFTMLForm.ResolveDesign(out ASource, AFileName: string): Boolean;
+var
+  fn: string;
+begin
+  Result := False;
+  ASource := '';
+  AFileName := '';
+  FExternalDesign := False;
+
+  { 1. Developer override: an .ftml file on disk wins over the embedded copy. }
+  fn := FindDesignFile(FDesignName);
+  if fn = '' then
+    fn := FindDesignFile(ClassName);
+  if fn <> '' then
+  begin
+    FExternalDesign := True;
+    AFileName := fn;
+    Exit(True);
+  end;
+
+  { 2. Embedded resource, by explicit design name then by class name. }
+  if EmbeddedFTMLSource(FDesignName, ASource, AFileName) then
+    Exit(True);
+  if EmbeddedFTMLSource(ClassName, ASource, AFileName) then
+    Exit(True);
+
+  Result := False;
+end;
+
+procedure TFtFTMLForm.LoadDesign();
+var
+  src, fn: string;
+begin
+  if not ResolveDesign(src, fn) then
+  begin
+    WriteLn(StdErr, '[FTML] No embedded resource or .ftml file for form "',
+      ClassName, '" (design name "', FDesignName, '").');
+    FDesignFileName := '';
+    Exit;
+  end;
+
+  FDesignFileName := fn;
+  if FExternalDesign then
+  begin
+    if LoadFile(fn) = nil then
+      WriteLn(StdErr, '[FTML] ', Host.LastError);
+  end
+  else if LoadString(src) = nil then
+    WriteLn(StdErr, '[FTML] ', Host.LastError);
 end;
 
 end.

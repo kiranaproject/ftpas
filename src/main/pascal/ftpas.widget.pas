@@ -50,6 +50,8 @@ type
     procedure SetFocused(AValue: Boolean);
     function  GetFocusable: Boolean;
     procedure SetFocusable(AValue: Boolean);
+    function  GetAcceptsTab: Boolean;
+    procedure SetAcceptsTab(AValue: Boolean);
     function  GetOpacity: Double;
     procedure SetOpacity(AValue: Double);
 
@@ -130,6 +132,8 @@ type
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property Focused: Boolean read GetFocused write SetFocused;
     property Focusable: Boolean read GetFocusable write SetFocusable;
+    { When True, Tab reaches this widget instead of moving keyboard focus. }
+    property AcceptsTab: Boolean read GetAcceptsTab write SetAcceptsTab;
     property Opacity: Double read GetOpacity write SetOpacity;
 
     property StyleClass: string read GetStyleClass write SetStyleClass;
@@ -495,6 +499,20 @@ procedure TFtWidget.SetFocused(AValue: Boolean);
 begin
   if AValue then
     SetFocus();
+end;
+
+function TFtWidget.GetAcceptsTab: Boolean;
+begin
+  if Assigned(ft_widget_get_accepts_tab) then
+    Result := ft_widget_get_accepts_tab(FHandle) <> 0
+  else
+    Result := False;
+end;
+
+procedure TFtWidget.SetAcceptsTab(AValue: Boolean);
+begin
+  if Assigned(ft_widget_set_accepts_tab) then
+    ft_widget_set_accepts_tab(FHandle, Ord(AValue));
 end;
 
 function TFtWidget.GetFocusable: Boolean;

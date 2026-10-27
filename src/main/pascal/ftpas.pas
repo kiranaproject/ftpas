@@ -19,6 +19,7 @@ interface
 uses
   ftpas.api,
   ftpas.types,
+  ftpas.font,
   ftpas.canvas,
   ftpas.widget,
   ftpas.window,
@@ -31,7 +32,8 @@ uses
   ftpas.app,
   ftpas.gpu,
   floriajs,
-  ftpas.ftml;
+  ftpas.ftml,
+  ftpas.ftml.res;
 
 type
   { Core Records & Enums }
@@ -66,6 +68,7 @@ type
 
   { Application & Canvas }
   TFtApp                 = ftpas.app.TFtApp;
+  TFtFontRef             = ftpas.font.TFtFontRef;
   TFtBitmap              = ftpas.canvas.TFtBitmap;
   TFtCanvas              = ftpas.canvas.TFtCanvas;
 
@@ -137,6 +140,9 @@ type
   { Declarative FTML (Floria Toolkit Markup Language) & Scripting }
   TFtFTMLHost            = ftpas.ftml.TFtFTMLHost;
   TFtFTMLWindow          = ftpas.ftml.TFtFTMLWindow;
+  TFtFTMLForm            = ftpas.ftml.TFtFTMLForm;
+  TFtFTMLWidgetCreatedEvent = ftpas.ftml.TFtFTMLWidgetCreatedEvent;
+  TFtFTMLResource        = ftpas.ftml.res.TFtFTMLResource;
   TFloriaFTMLEngine      = floriajs.TFloriaFTMLEngine;
   TFloriaFTMLItem        = floriajs.TFloriaFTMLItem;
   TFloriaJSValue         = floriajs.TFloriaJSValue;

@@ -350,6 +350,8 @@ var
   ft_widget_has_focus: function(widget: TFtWidget): cint32; cdecl;
   ft_widget_set_focusable: procedure(widget: TFtWidget; focusable: cint32); cdecl;
   ft_widget_get_focusable: function(widget: TFtWidget): cint32; cdecl;
+  ft_widget_set_accepts_tab: procedure(widget: TFtWidget; accepts: cint32); cdecl;
+  ft_widget_get_accepts_tab: function(widget: TFtWidget): cint32; cdecl;
   ft_widget_set_opacity: procedure(widget: TFtWidget; opacity: Double); cdecl;
   ft_widget_get_opacity: function(widget: TFtWidget): Double; cdecl;
   ft_widget_set_enabled: procedure(widget: TFtWidget; enabled: cint32); cdecl;
@@ -788,6 +790,10 @@ var
   ft_backend_get_key_symbols: function(): Pointer; cdecl;
   ft_font_gamma_get: function(): Double; cdecl;
   ft_font_gamma_set: procedure(gamma: Double); cdecl;
+  ft_font_create: function(desc: PChar): Pointer; cdecl;
+  ft_font_ascii_advance: function(font: Pointer; ch: cint32): Double; cdecl;
+  ft_font_text_width: function(font: Pointer; text: PChar): Double; cdecl;
+  ft_font_get_metrics: procedure(font: Pointer; out ascent, descent, height, maxAdvance: Double); cdecl;
 
   ft_theme_set: function(theme_name: PChar): cint32; cdecl;
   ft_theme_get: function(): PChar; cdecl;
@@ -1234,6 +1240,8 @@ begin
   Pointer(ft_widget_has_focus) := BindFunc('ft_widget_has_focus');
   Pointer(ft_widget_set_focusable) := BindFunc('ft_widget_set_focusable');
   Pointer(ft_widget_get_focusable) := BindFunc('ft_widget_get_focusable');
+  Pointer(ft_widget_set_accepts_tab) := BindFunc('ft_widget_set_accepts_tab');
+  Pointer(ft_widget_get_accepts_tab) := BindFunc('ft_widget_get_accepts_tab');
   Pointer(ft_widget_set_opacity) := BindFunc('ft_widget_set_opacity');
   Pointer(ft_widget_get_opacity) := BindFunc('ft_widget_get_opacity');
   Pointer(ft_widget_set_enabled) := BindFunc('ft_widget_set_enabled');
@@ -1669,6 +1677,10 @@ begin
   Pointer(ft_backend_get_key_symbols) := BindFunc('ft_backend_get_key_symbols');
   Pointer(ft_font_gamma_get) := BindFunc('ft_font_gamma_get');
   Pointer(ft_font_gamma_set) := BindFunc('ft_font_gamma_set');
+  Pointer(ft_font_create) := BindFunc('ft_font_create');
+  Pointer(ft_font_ascii_advance) := BindFunc('ft_font_ascii_advance');
+  Pointer(ft_font_text_width) := BindFunc('ft_font_text_width');
+  Pointer(ft_font_get_metrics) := BindFunc('ft_font_get_metrics');
   Pointer(ft_theme_set) := BindFunc('ft_theme_set');
   Pointer(ft_theme_get) := BindFunc('ft_theme_get');
   Pointer(ft_theme_get_available) := BindFunc('ft_theme_get_available');
