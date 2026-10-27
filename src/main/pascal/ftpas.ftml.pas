@@ -986,6 +986,12 @@ begin
     Exit(nil);
   end;
 
+  if (Width > 0) and (Height > 0) then
+  begin
+    FRootItem.Width := Width;
+    FRootItem.Height := Height;
+  end;
+
   FRootWidget := BuildWidgetTree(FRootItem, Self);
   SyncProperties();
   Result := FRootItem;
@@ -1000,6 +1006,12 @@ begin
   begin
     FLastError := FEngine.LastError;
     Exit(nil);
+  end;
+
+  if (Width > 0) and (Height > 0) then
+  begin
+    FRootItem.Width := Width;
+    FRootItem.Height := Height;
   end;
 
   FRootWidget := BuildWidgetTree(FRootItem, Self);
@@ -1276,11 +1288,15 @@ end;
 function TFtFTMLWindow.LoadString(const ASource: string): TFloriaFTMLItem;
 begin
   Result := FHost.LoadString(ASource);
+  if Result <> nil then
+    DoResize(Width, Height);
 end;
 
 function TFtFTMLWindow.LoadFile(const AFileName: string): TFloriaFTMLItem;
 begin
   Result := FHost.LoadFile(AFileName);
+  if Result <> nil then
+    DoResize(Width, Height);
 end;
 
 function TFtFTMLWindow.Evaluate(const AScript: string): TFloriaJSValue;
@@ -1411,6 +1427,9 @@ begin
   end
   else if LoadString(src) = nil then
     WriteLn(StdErr, '[FTML] ', Host.LastError);
+
+  if (Width > 0) and (Height > 0) then
+    DoResize(Width, Height);
 end;
 
 end.
