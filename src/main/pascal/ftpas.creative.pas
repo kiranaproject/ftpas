@@ -78,6 +78,7 @@ type
     procedure DoResize(ANewWidth, ANewHeight: Integer); virtual;
   public
     constructor Create(AParent: TFtWidget; AX, AY, AW, AH: Integer); reintroduce;
+    procedure SetBounds(AX, AY, AWidth, AHeight: Integer); override;
 
     property Cursor: TFtCursorType read GetCursor write SetCursor;
     property ClipToBounds: Boolean write SetClipToBounds;
@@ -427,6 +428,16 @@ procedure TFtDrawingArea.DoResize(ANewWidth, ANewHeight: Integer);
 begin
   if Assigned(FOnResize) then
     FOnResize(Self, ANewWidth, ANewHeight);
+end;
+
+procedure TFtDrawingArea.SetBounds(AX, AY, AWidth, AHeight: Integer);
+var
+  sizeChanged: Boolean;
+begin
+  sizeChanged := (Width <> AWidth) or (Height <> AHeight);
+  inherited SetBounds(AX, AY, AWidth, AHeight);
+  if sizeChanged then
+    DoResize(AWidth, AHeight);
 end;
 
 { TFtRuler }
