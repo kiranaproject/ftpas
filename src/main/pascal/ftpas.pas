@@ -96,6 +96,7 @@ type
 
   { Layout Containers }
   TFtContainer           = ftpas.layouts.TFtContainer;
+  TFtPanel               = ftpas.layouts.TFtPanel;
   TFtFlexBox             = ftpas.layouts.TFtFlexBox;
   TFtHBox                = ftpas.layouts.TFtHBox;
   TFtVBox                = ftpas.layouts.TFtVBox;

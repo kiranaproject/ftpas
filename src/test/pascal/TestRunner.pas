@@ -98,6 +98,7 @@ type
     procedure TestFTMLWindowLifecycle();
     procedure TestFTMLAnchorsAndGeometry();
     procedure TestFTMLFlexBoxAndGridContainers();
+    procedure TestFTMLContainerAndPanel();
   end;
 
 { TLibraryLoadingTest }
@@ -899,6 +900,67 @@ begin
 
     cellW := host.FindWidget('gridCell1');
     AssertNotNull('gridCell1 found', cellW);
+  finally
+    win.Free();
+  end;
+end;
+
+procedure TFTMLIntegrationTest.TestFTMLContainerAndPanel();
+var
+  win: TFtWindow;
+  host: TFtFTMLHost;
+  root: TFloriaFTMLItem;
+  contW, panW, rectW: TFtWidget;
+const
+  SRC =
+    'Container {' + LineEnding +
+    '  id: rootContainer;' + LineEnding +
+    '  width: 500; height: 400;' + LineEnding +
+    '  Container {' + LineEnding +
+    '    id: childBox;' + LineEnding +
+    '    width: 200; height: 100;' + LineEnding +
+    '  }' + LineEnding +
+    '  Panel {' + LineEnding +
+    '    id: childPanel;' + LineEnding +
+    '    width: 200; height: 100;' + LineEnding +
+    '    radius: 8;' + LineEnding +
+    '  }' + LineEnding +
+    '  Rectangle {' + LineEnding +
+    '    id: childRect;' + LineEnding +
+    '    width: 100; height: 50;' + LineEnding +
+    '  }' + LineEnding +
+    '}';
+begin
+  win := TFtWindow.Create(500, 400, 'Test Container Panel');
+  try
+    host := TFtFTMLHost.Create(win, 0, 0, 500, 400);
+    // Root container must be transparent (DrawFrame = False)
+    AssertFalse('Host DrawFrame is False', host.DrawFrame);
+
+    root := host.LoadString(SRC);
+    AssertNotNull('Root item parsed', root);
+    AssertEquals('Root item type', 'Container', root.TypeName);
+
+    // Child Container: transparent (DrawFrame = False)
+    contW := host.FindWidget('childBox');
+    AssertNotNull('childBox widget found', contW);
+    AssertTrue('childBox is TFtContainer', contW is TFtContainer);
+    AssertFalse('childBox is not TFtPanel', contW is TFtPanel);
+    AssertFalse('childBox DrawFrame is False', TFtContainer(contW).DrawFrame);
+
+    // Child Panel: styled (DrawFrame = True, is TFtPanel)
+    panW := host.FindWidget('childPanel');
+    AssertNotNull('childPanel widget found', panW);
+    AssertTrue('childPanel is TFtPanel', panW is TFtPanel);
+    AssertTrue('childPanel DrawFrame is True', TFtPanel(panW).DrawFrame);
+    AssertEquals('childPanel radius is 8.0', 8.0, TFtPanel(panW).CornerRadius, 0.001);
+
+    // Child Rectangle: flat shape (DrawFrame = False)
+    rectW := host.FindWidget('childRect');
+    AssertNotNull('childRect widget found', rectW);
+    AssertTrue('childRect is TFtContainer', rectW is TFtContainer);
+    AssertFalse('childRect is not TFtPanel', rectW is TFtPanel);
+    AssertFalse('childRect DrawFrame is False', TFtContainer(rectW).DrawFrame);
   finally
     win.Free();
   end;

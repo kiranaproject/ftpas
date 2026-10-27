@@ -259,6 +259,7 @@ end;
 constructor TFtFTMLHost.Create(AParent: TFtWidget; AX, AY, AW, AH: Integer);
 begin
   inherited Create(AParent, AX, AY, AW, AH);
+  DrawFrame := False;
   ScrollBarMode := ftsbmNone;
   SetPadding(0.0, 0.0);
   FEngine := TFloriaFTMLEngine.Create();
@@ -482,7 +483,7 @@ begin
   W := nil;
   childrenHandled := False;
 
-  if (AItem = FRootItem) and ((AItem.TypeName = 'Rectangle') or (AItem.TypeName = 'Card')) then
+  if (AItem = FRootItem) and ((AItem.TypeName = 'Rectangle') or (AItem.TypeName = 'Container') or (AItem.TypeName = 'Item')) then
   begin
     W := Self;
     rad := AItem.GetPropertyAsNumber('radius', 0.0);
@@ -499,7 +500,77 @@ begin
         Self.Style := 'background-color: ' + colorStr + ';';
     end;
   end
-  else if (AItem.TypeName = 'Rectangle') or (AItem.TypeName = 'Card') then
+  else if (AItem = FRootItem) and ((AItem.TypeName = 'Panel') or (AItem.TypeName = 'Card')) then
+  begin
+    W := Self;
+    Self.DrawFrame := True;
+    padVal := AItem.GetPropertyAsNumber('padding', 8.0);
+    Self.SetPadding(padVal, padVal);
+    rad := AItem.GetPropertyAsNumber('radius', 6.0);
+    if rad > 0.0 then
+      Self.CornerRadius := rad;
+
+    colorStr := AItem.GetPropertyAsString('color');
+    borderCol := AItem.GetPropertyAsString('borderColor');
+    if (colorStr <> '') or (borderCol <> '') then
+    begin
+      if borderCol <> '' then
+        Self.Style := 'background-color: ' + colorStr + '; border: 1px solid ' + borderCol + ';'
+      else
+        Self.Style := 'background-color: ' + colorStr + ';';
+    end;
+  end
+  else if (AItem.TypeName = 'Container') or (AItem.TypeName = 'Item') then
+  begin
+    if (iw <= 0) and (AParentWidget <> nil) and (AParentWidget.Width > ix) then
+      iw := AParentWidget.Width - ix;
+    if (ih <= 0) and (AParentWidget <> nil) and (AParentWidget.Height > iy) then
+      ih := AParentWidget.Height - iy;
+
+    W := TFtContainer.Create(AParentWidget, ix, iy, iw, ih);
+    TFtContainer(W).ScrollBarMode := ftsbmNone;
+    padVal := AItem.GetPropertyAsNumber('padding', 0.0);
+    TFtContainer(W).SetPadding(padVal, padVal);
+    rad := AItem.GetPropertyAsNumber('radius', 0.0);
+    if rad > 0.0 then
+      TFtContainer(W).CornerRadius := rad;
+
+    colorStr := AItem.GetPropertyAsString('color');
+    borderCol := AItem.GetPropertyAsString('borderColor');
+    if (colorStr <> '') or (borderCol <> '') then
+    begin
+      if borderCol <> '' then
+        W.Style := 'background-color: ' + colorStr + '; border: 1px solid ' + borderCol + ';'
+      else
+        W.Style := 'background-color: ' + colorStr + ';';
+    end;
+  end
+  else if (AItem.TypeName = 'Panel') or (AItem.TypeName = 'Card') then
+  begin
+    if (iw <= 0) and (AParentWidget <> nil) and (AParentWidget.Width > ix) then
+      iw := AParentWidget.Width - ix;
+    if (ih <= 0) and (AParentWidget <> nil) and (AParentWidget.Height > iy) then
+      ih := AParentWidget.Height - iy;
+
+    W := TFtPanel.Create(AParentWidget, ix, iy, iw, ih);
+    TFtPanel(W).ScrollBarMode := ftsbmNone;
+    padVal := AItem.GetPropertyAsNumber('padding', 8.0);
+    TFtPanel(W).SetPadding(padVal, padVal);
+    rad := AItem.GetPropertyAsNumber('radius', 6.0);
+    if rad > 0.0 then
+      TFtPanel(W).CornerRadius := rad;
+
+    colorStr := AItem.GetPropertyAsString('color');
+    borderCol := AItem.GetPropertyAsString('borderColor');
+    if (colorStr <> '') or (borderCol <> '') then
+    begin
+      if borderCol <> '' then
+        W.Style := 'background-color: ' + colorStr + '; border: 1px solid ' + borderCol + ';'
+      else
+        W.Style := 'background-color: ' + colorStr + ';';
+    end;
+  end
+  else if AItem.TypeName = 'Rectangle' then
   begin
     if (iw <= 0) and (AParentWidget <> nil) and (AParentWidget.Width > ix) then
       iw := AParentWidget.Width - ix;

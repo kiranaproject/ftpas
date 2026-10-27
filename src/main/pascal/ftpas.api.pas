@@ -571,8 +571,9 @@ var
   ft_scrollbar_on_scroll: procedure(scrollbar: TFtWidget; callback: TFtScrollCallback; user_data: Pointer); cdecl;
   ft_scrollbar_set_corner_radius: procedure(scrollbar: TFtWidget; radius: Double); cdecl;
 
-  { Container }
+  { Container & Panel }
   ft_container_create: function(parent: TFtWidget; x, y, w, h: cint32): TFtWidget; cdecl;
+  ft_panel_create: function(parent: TFtWidget; x, y, w, h: cint32): TFtWidget; cdecl;
   ft_container_set_scrollbar_mode: procedure(container: TFtWidget; mode: cint32); cdecl;
   ft_container_get_scrollbar_mode: function(container: TFtWidget): cint32; cdecl;
   ft_container_set_content_size: procedure(container: TFtWidget; width, height: Double); cdecl;
@@ -1461,8 +1462,9 @@ begin
   Pointer(ft_scrollbar_on_scroll) := BindFunc('ft_scrollbar_on_scroll');
   Pointer(ft_scrollbar_set_corner_radius) := BindFunc('ft_scrollbar_set_corner_radius');
 
-  { Bind Container }
+  { Bind Container & Panel }
   Pointer(ft_container_create) := BindFunc('ft_container_create');
+  Pointer(ft_panel_create) := BindFunc('ft_panel_create');
   Pointer(ft_container_set_scrollbar_mode) := BindFunc('ft_container_set_scrollbar_mode');
   Pointer(ft_container_get_scrollbar_mode) := BindFunc('ft_container_get_scrollbar_mode');
   Pointer(ft_container_set_content_size) := BindFunc('ft_container_set_content_size');

@@ -22,6 +22,7 @@ uses
 type
   { Forward Declarations }
   TFtContainer = class;
+  TFtPanel = class;
   TFtFlexBox = class;
   TFtHBox = class;
   TFtVBox = class;
@@ -87,6 +88,9 @@ type
 
     property OnScroll: TFtContainerScrollEvent read FOnScroll write SetOnScroll;
   end;
+
+  { TFtPanel — Themed / styled surface container with frame plate, padding, and borders }
+  TFtPanel = class(TFtContainer);
 
   { TFtFlexBox — Micro-Flexbox layout container }
   TFtFlexBox = class(TFtWidget)
@@ -319,7 +323,9 @@ var
 begin
   inherited Create(AParent);
   if AParent <> nil then pHandle := AParent.Handle else pHandle := nil;
-  if Assigned(ft_container_create) then
+  if (Self is TFtPanel) and Assigned(ft_panel_create) then
+    h := ft_panel_create(pHandle, AX, AY, AW, AH)
+  else if Assigned(ft_container_create) then
     h := ft_container_create(pHandle, AX, AY, AW, AH)
   else
     h := nil;
