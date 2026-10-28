@@ -888,6 +888,13 @@ var
   ft_notebook_set_tab_height: procedure(notebook: TFtNotebook; height: Double); cdecl;
   ft_notebook_get_tab_height: function(notebook: TFtNotebook): Double; cdecl;
   ft_notebook_on_tab_change: procedure(notebook: TFtNotebook; callback: TFtTabChangeCallback; user_data: Pointer); cdecl;
+  ft_notebook_set_max_tab_width: procedure(notebook: TFtNotebook; width: Double); cdecl;
+  ft_notebook_get_max_tab_width: function(notebook: TFtNotebook): Double; cdecl;
+  ft_notebook_set_min_tab_width: procedure(notebook: TFtNotebook; width: Double); cdecl;
+  ft_notebook_get_min_tab_width: function(notebook: TFtNotebook): Double; cdecl;
+  ft_notebook_set_scroll_offset: procedure(notebook: TFtNotebook; offset: Double); cdecl;
+  ft_notebook_get_scroll_offset: function(notebook: TFtNotebook): Double; cdecl;
+  ft_notebook_ensure_tab_visible: procedure(notebook: TFtNotebook; index: cint32); cdecl;
   ft_tab_page_set_title: procedure(page: TFtTabPage; title: PChar); cdecl;
   ft_tab_page_get_title: function(page: TFtTabPage): PChar; cdecl;
   ft_tab_page_set_closeable: procedure(page: TFtTabPage; closeable: cint32); cdecl;
@@ -1777,6 +1784,13 @@ begin
   Pointer(ft_notebook_set_tab_height) := BindFunc('ft_notebook_set_tab_height');
   Pointer(ft_notebook_get_tab_height) := BindFunc('ft_notebook_get_tab_height');
   Pointer(ft_notebook_on_tab_change) := BindFunc('ft_notebook_on_tab_change');
+  Pointer(ft_notebook_set_max_tab_width) := BindFunc('ft_notebook_set_max_tab_width');
+  Pointer(ft_notebook_get_max_tab_width) := BindFunc('ft_notebook_get_max_tab_width');
+  Pointer(ft_notebook_set_min_tab_width) := BindFunc('ft_notebook_set_min_tab_width');
+  Pointer(ft_notebook_get_min_tab_width) := BindFunc('ft_notebook_get_min_tab_width');
+  Pointer(ft_notebook_set_scroll_offset) := BindFunc('ft_notebook_set_scroll_offset');
+  Pointer(ft_notebook_get_scroll_offset) := BindFunc('ft_notebook_get_scroll_offset');
+  Pointer(ft_notebook_ensure_tab_visible) := BindFunc('ft_notebook_ensure_tab_visible');
   Pointer(ft_tab_page_set_title) := BindFunc('ft_tab_page_set_title');
   Pointer(ft_tab_page_get_title) := BindFunc('ft_tab_page_get_title');
   Pointer(ft_tab_page_set_closeable) := BindFunc('ft_tab_page_set_closeable');

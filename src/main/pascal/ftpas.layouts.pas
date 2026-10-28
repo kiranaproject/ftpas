@@ -257,6 +257,12 @@ type
     procedure SetActiveIndex(AValue: Integer);
     function  GetTabHeight: Double;
     procedure SetTabHeight(AValue: Double);
+    function  GetMaxTabWidth: Double;
+    procedure SetMaxTabWidth(AValue: Double);
+    function  GetMinTabWidth: Double;
+    procedure SetMinTabWidth(AValue: Double);
+    function  GetScrollOffset: Double;
+    procedure SetScrollOffset(AValue: Double);
 
     procedure SetOnTabChange(AValue: TFtNotebookTabChangeEvent);
   protected
@@ -268,10 +274,14 @@ type
     procedure RemoveTab(AIndex: Integer);
     procedure ClearTabs();
     function  GetPage(AIndex: Integer): TFtTabPage;
+    procedure EnsureTabVisible(AIndex: Integer);
 
     property PageCount: Integer read GetPageCount;
     property ActiveIndex: Integer read GetActiveIndex write SetActiveIndex;
     property TabHeight: Double read GetTabHeight write SetTabHeight;
+    property MaxTabWidth: Double read GetMaxTabWidth write SetMaxTabWidth;
+    property MinTabWidth: Double read GetMinTabWidth write SetMinTabWidth;
+    property ScrollOffset: Double read GetScrollOffset write SetScrollOffset;
 
     property OnTabChange: TFtNotebookTabChangeEvent read FOnTabChange write SetOnTabChange;
   end;
@@ -1162,6 +1172,51 @@ procedure TFtNotebook.SetTabHeight(AValue: Double);
 begin
   if (Handle <> nil) and Assigned(ft_notebook_set_tab_height) then
     ft_notebook_set_tab_height(Handle, AValue);
+end;
+
+function TFtNotebook.GetMaxTabWidth: Double;
+begin
+  Result := 0.0;
+  if (Handle <> nil) and Assigned(ft_notebook_get_max_tab_width) then
+    Result := ft_notebook_get_max_tab_width(Handle);
+end;
+
+procedure TFtNotebook.SetMaxTabWidth(AValue: Double);
+begin
+  if (Handle <> nil) and Assigned(ft_notebook_set_max_tab_width) then
+    ft_notebook_set_max_tab_width(Handle, AValue);
+end;
+
+function TFtNotebook.GetMinTabWidth: Double;
+begin
+  Result := 0.0;
+  if (Handle <> nil) and Assigned(ft_notebook_get_min_tab_width) then
+    Result := ft_notebook_get_min_tab_width(Handle);
+end;
+
+procedure TFtNotebook.SetMinTabWidth(AValue: Double);
+begin
+  if (Handle <> nil) and Assigned(ft_notebook_set_min_tab_width) then
+    ft_notebook_set_min_tab_width(Handle, AValue);
+end;
+
+function TFtNotebook.GetScrollOffset: Double;
+begin
+  Result := 0.0;
+  if (Handle <> nil) and Assigned(ft_notebook_get_scroll_offset) then
+    Result := ft_notebook_get_scroll_offset(Handle);
+end;
+
+procedure TFtNotebook.SetScrollOffset(AValue: Double);
+begin
+  if (Handle <> nil) and Assigned(ft_notebook_set_scroll_offset) then
+    ft_notebook_set_scroll_offset(Handle, AValue);
+end;
+
+procedure TFtNotebook.EnsureTabVisible(AIndex: Integer);
+begin
+  if (Handle <> nil) and Assigned(ft_notebook_ensure_tab_visible) then
+    ft_notebook_ensure_tab_visible(Handle, AIndex);
 end;
 
 procedure TFtNotebook.SetOnTabChange(AValue: TFtNotebookTabChangeEvent);

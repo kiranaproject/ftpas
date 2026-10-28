@@ -887,6 +887,12 @@ begin
     if (ih <= 0) and (AParentWidget <> nil) and (AParentWidget.Height > iy) then
       ih := AParentWidget.Height - iy;
     W := TFtNotebook.Create(AParentWidget, ix, iy, iw, ih);
+    if AItem.HasProperty('tabHeight') then
+      TFtNotebook(W).TabHeight := AItem.GetPropertyAsNumber('tabHeight', 32.0);
+    if AItem.HasProperty('maxTabWidth') then
+      TFtNotebook(W).MaxTabWidth := AItem.GetPropertyAsNumber('maxTabWidth', 200.0);
+    if AItem.HasProperty('minTabWidth') then
+      TFtNotebook(W).MinTabWidth := AItem.GetPropertyAsNumber('minTabWidth', 70.0);
     childrenHandled := True;
     for i := 0 to AItem.ChildCount() - 1 do
     begin

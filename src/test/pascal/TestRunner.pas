@@ -64,6 +64,7 @@ type
     procedure TestHBoxAndVBox();
     procedure TestFloatingBarProperties();
     procedure TestSizeGroup();
+    procedure TestNotebookConstraintsAndScrolling();
   end;
 
   { Test 6: Data Views (Table & TreeView) }
@@ -103,6 +104,7 @@ type
     procedure TestFTMLReadComponentRes();
     procedure TestFTMLEmbedderModule();
     procedure TestFTMLDeclarativeVisibility();
+    procedure TestFTMLNotebookProperties();
   end;
 
 { TLibraryLoadingTest }
@@ -493,6 +495,49 @@ begin
     finally
       sg.Free();
     end;
+  finally
+    win.Free();
+  end;
+end;
+
+procedure TLayoutsTest.TestNotebookConstraintsAndScrolling();
+var
+  win: TFtWindow;
+  nb: TFtNotebook;
+  p1, p2, p3: TFtTabPage;
+begin
+  win := TFtWindow.Create(600, 400, 'NotebookTest');
+  try
+    nb := TFtNotebook.Create(win, 10, 10, 500, 300);
+    p1 := nb.AddTab('Tab One', False);
+    p2 := nb.AddTab('Tab Two With Long Title That Might Overflow', True);
+    p3 := nb.AddTab('Tab Three', False);
+
+    AssertEquals('PageCount is 3', 3, nb.PageCount);
+    AssertEquals('ActiveIndex defaults to 0', 0, nb.ActiveIndex);
+    AssertEquals('Default MaxTabWidth is 200.0', 200.0, nb.MaxTabWidth);
+    AssertEquals('Default MinTabWidth is 70.0', 70.0, nb.MinTabWidth);
+    AssertEquals('Default ScrollOffset is 0.0', 0.0, nb.ScrollOffset);
+
+    // Set custom constraints
+    nb.MaxTabWidth := 150.0;
+    AssertEquals('MaxTabWidth updated to 150.0', 150.0, nb.MaxTabWidth);
+
+    nb.MinTabWidth := 80.0;
+    AssertEquals('MinTabWidth updated to 80.0', 80.0, nb.MinTabWidth);
+
+    // Scrolling operations
+    nb.ScrollOffset := 50.0;
+    nb.EnsureTabVisible(2);
+
+    nb.ActiveIndex := 1;
+    AssertEquals('ActiveIndex updated to 1', 1, nb.ActiveIndex);
+
+    nb.RemoveTab(0);
+    AssertEquals('PageCount is 2 after remove', 2, nb.PageCount);
+
+    nb.ClearTabs();
+    AssertEquals('PageCount is 0 after clear', 0, nb.PageCount);
   finally
     win.Free();
   end;
@@ -1141,6 +1186,41 @@ begin
     // Dynamic visibility change
     pan.Visible := True;
     AssertTrue('hiddenPanel is visible after pan.Visible := True', pan.Visible);
+  finally
+    win.Free();
+  end;
+end;
+
+procedure TFTMLIntegrationTest.TestFTMLNotebookProperties();
+var
+  win: TFtWindow;
+  host: TFtFTMLHost;
+  nbW: TFtWidget;
+  nb: TFtNotebook;
+const
+  SRC =
+    'Notebook {' + LineEnding +
+    '  id: myNotebook;' + LineEnding +
+    '  width: 500; height: 300;' + LineEnding +
+    '  maxTabWidth: 160;' + LineEnding +
+    '  minTabWidth: 80;' + LineEnding +
+    '  tabHeight: 36;' + LineEnding +
+    '  Tab { id: tab1; title: "First Tab"; }' + LineEnding +
+    '  Tab { id: tab2; title: "Second Tab With Long Title"; }' + LineEnding +
+    '}' + LineEnding;
+begin
+  win := TFtWindow.Create(500, 400, 'Test Notebook FTML');
+  try
+    host := TFtFTMLHost.Create(win, 0, 0, 500, 400);
+    AssertNotNull('LoadString should succeed', host.LoadString(SRC));
+    nbW := host.FindWidget('myNotebook');
+    AssertNotNull('Notebook widget resolved', nbW);
+    AssertTrue('Widget is TFtNotebook', nbW is TFtNotebook);
+    nb := TFtNotebook(nbW);
+    AssertEquals('MaxTabWidth parsed from FTML', 160.0, nb.MaxTabWidth);
+    AssertEquals('MinTabWidth parsed from FTML', 80.0, nb.MinTabWidth);
+    AssertEquals('TabHeight parsed from FTML', 36.0, nb.TabHeight);
+    AssertEquals('PageCount is 2', 2, nb.PageCount);
   finally
     win.Free();
   end;
