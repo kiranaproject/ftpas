@@ -1028,6 +1028,12 @@ begin
       WriteLn('[FTML Notice] Position anchors ignored on item "', AItem.Id, '" inside layout container "', AParentWidget.ClassName, '"');
   end;
 
+  if (W <> nil) and (W <> Self) then
+  begin
+    W.Visible := AItem.Visible;
+    W.Enabled := AItem.GetPropertyAsBoolean('enabled', True);
+  end;
+
   RegisterBinding(AItem, W);
   DoWidgetCreated(AItem, W);
 

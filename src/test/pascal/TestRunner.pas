@@ -102,6 +102,7 @@ type
     procedure TestFTMLContainerAndPanel();
     procedure TestFTMLReadComponentRes();
     procedure TestFTMLEmbedderModule();
+    procedure TestFTMLDeclarativeVisibility();
   end;
 
 { TLibraryLoadingTest }
@@ -1094,6 +1095,54 @@ begin
     DeleteFile(tmpRes);
   finally
     embedder.Free();
+  end;
+end;
+
+procedure TFTMLIntegrationTest.TestFTMLDeclarativeVisibility();
+const
+  MARKUP =
+    'Container {' + LineEnding +
+    '  id: rootBox;' + LineEnding +
+    '  width: 400; height: 300;' + LineEnding +
+    '  Button {' + LineEnding +
+    '    id: visBtn;' + LineEnding +
+    '    text: "Visible Button";' + LineEnding +
+    '    visible: true;' + LineEnding +
+    '  }' + LineEnding +
+    '  Panel {' + LineEnding +
+    '    id: hiddenPanel;' + LineEnding +
+    '    visible: false;' + LineEnding +
+    '    height: 50;' + LineEnding +
+    '    Button {' + LineEnding +
+    '      id: childBtn;' + LineEnding +
+    '      text: "Child in Hidden";' + LineEnding +
+    '    }' + LineEnding +
+    '  }' + LineEnding +
+    '}';
+var
+  win: TFtFTMLWindow;
+  btn, pan, cbtn: TFtWidget;
+begin
+  win := TFtFTMLWindow.Create(400, 300, 'VisTest');
+  try
+    win.LoadString(MARKUP);
+    btn := win.FindWidget('visBtn');
+    pan := win.FindWidget('hiddenPanel');
+    cbtn := win.FindWidget('childBtn');
+    AssertNotNull('visBtn should exist', btn);
+    AssertNotNull('hiddenPanel should exist', pan);
+    AssertNotNull('childBtn should exist', cbtn);
+
+    AssertTrue('visBtn is visible', btn.Visible);
+    AssertFalse('hiddenPanel is not visible', pan.Visible);
+    AssertFalse('hiddenPanel is not showing', pan.Showing);
+    AssertFalse('childBtn is not showing because parent panel is hidden', cbtn.Showing);
+
+    // Dynamic visibility change
+    pan.Visible := True;
+    AssertTrue('hiddenPanel is visible after pan.Visible := True', pan.Visible);
+  finally
+    win.Free();
   end;
 end;
 
