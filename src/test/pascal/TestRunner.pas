@@ -99,6 +99,7 @@ type
     procedure TestFTMLAnchorsAndGeometry();
     procedure TestFTMLFlexBoxAndGridContainers();
     procedure TestFTMLContainerAndPanel();
+    procedure TestFTMLReadComponentRes();
   end;
 
 { TLibraryLoadingTest }
@@ -963,6 +964,49 @@ begin
     AssertFalse('childRect DrawFrame is False', TFtContainer(rectW).DrawFrame);
   finally
     win.Free();
+  end;
+end;
+
+procedure TFTMLIntegrationTest.TestFTMLReadComponentRes();
+const
+  RES_MARKUP =
+    'Container {' + LineEnding +
+    '  id: testResRoot;' + LineEnding +
+    '  width: 450; height: 350;' + LineEnding +
+    '  Button {' + LineEnding +
+    '    id: testResBtn;' + LineEnding +
+    '    text: "Resource Button";' + LineEnding +
+    '  }' + LineEnding +
+    '}';
+var
+  src: string;
+  form: TFtFTMLForm;
+  btn: TFtWidget;
+begin
+  // Non-existent design returns false
+  AssertFalse('Non-existent design returns False', ReadComponentRes('TNonExistentDesign', src));
+
+  // Register in-memory FTML resource
+  RegisterFTMLResource('TTestFormRes', 'test_form.ftml', PChar(RES_MARKUP), Length(RES_MARKUP));
+
+  // ReadComponentRes loads raw string
+  AssertTrue('ReadComponentRes loads registered design', ReadComponentRes('TTestFormRes', src));
+  AssertEquals('Loaded string matches markup', RES_MARKUP, src);
+
+  // TFtFTMLForm creates window and resolves via ReadComponentRes
+  form := TFtFTMLForm.Create(450, 350, 'Resource Bound Form', 'TTestFormRes');
+  try
+    AssertEquals('Form design name', 'TTestFormRes', form.DesignName);
+    AssertNotNull('Form root item exists', form.RootItem);
+    btn := form.FindWidget('testResBtn');
+    AssertNotNull('Widget from resource found', btn);
+    AssertTrue('Widget is TFtButton', btn is TFtButton);
+    AssertEquals('Button text matches', 'Resource Button', TFtButton(btn).Caption);
+
+    // Explicit ReadComponentRes call on form instance
+    AssertTrue('Explicit ReadComponentRes call succeeds', form.ReadComponentRes('TTestFormRes'));
+  finally
+    form.Free();
   end;
 end;
 

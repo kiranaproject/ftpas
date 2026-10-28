@@ -27,7 +27,7 @@ program ftml_embed;
 {$mode objfpc}{$H+}
 
 uses
-  Classes, SysUtils;
+  Classes, SysUtils, resource, reswriter;
 
 type
   TEmbedItem = record
@@ -227,6 +227,42 @@ begin
   end;
 end;
 
+procedure EmitRes(const AFileName: string);
+var
+  res: TResources;
+  raw: TGenericResource;
+  descType, descName: TResourceDesc;
+  i, n: Integer;
+  item: TEmbedItem;
+  formNameUpper: string;
+begin
+  res := TResources.Create();
+  try
+    for i := 0 to High(GItems) do
+    begin
+      item := GItems[i];
+      formNameUpper := UpperCase(item.FormName);
+      descType := TResourceDesc.Create(10); // RT_RCDATA = 10
+      descName := TResourceDesc.Create(formNameUpper);
+      raw := TGenericResource.Create(descType, descName);
+      descType.Free();
+      descName.Free();
+      if Length(item.Source) > 0 then
+        raw.RawData.WriteBuffer(item.Source[1], Length(item.Source));
+      res.Add(raw);
+    end;
+    ForceDirectories(ExtractFileDir(ExpandFileName(AFileName)));
+    res.WriteToFile(AFileName);
+    n := Length(GItems);
+    if n = 1 then
+      WriteLn('ftml_embed: wrote resource file ', AFileName, ' (1 document)')
+    else
+      WriteLn('ftml_embed: wrote resource file ', AFileName, ' (', n, ' documents)');
+  finally
+    res.Free();
+  end;
+end;
+
 function BaseNameNoExt(const APath: string): string;
 begin
   Result := ChangeFileExt(ExtractFileName(APath), '');
@@ -236,21 +272,26 @@ var
   i: Integer;
   arg, outArg, unitArg, formArg, fileArg: string;
   eqAt: Integer;
-  usedOut: Boolean;
+  isRes: Boolean;
 begin
   outArg := '';
   unitArg := '';
-  usedOut := False;
+  isRes := False;
 
   i := 1;
   while i <= ParamCount() do
   begin
     arg := ParamStr(i);
-    if arg = '--out' then
+    if (arg = '--out') or (arg = '-o') then
     begin
       Inc(i);
       outArg := ParamStr(i);
-      usedOut := True;
+    end
+    else if (arg = '--res') or (arg = '-r') then
+    begin
+      Inc(i);
+      outArg := ParamStr(i);
+      isRes := True;
     end
     else if arg = '--unit' then
     begin
@@ -288,16 +329,27 @@ begin
 
   if Length(GItems) = 0 then
   begin
-    WriteLn(StdErr, 'Usage: ftml_embed --out <file.pas> [--unit <UnitName>] [--form Name=file.ftml] file.ftml [...]');
+    WriteLn(StdErr, 'Usage: ftml_embed [--res <file.res>] [--out <file.pas>] [--unit <UnitName>] [--form Name=file.ftml] file.ftml [...]');
     Halt(2);
   end;
 
-  if outArg = '' then
-    outArg := GOutFile;
-  if unitArg = '' then
-    unitArg := SanitizeIdent(LowerCase(BaseNameNoExt(outArg)));
-  if outArg = '' then
-    outArg := unitArg + '.pas';
+  if (outArg <> '') and (LowerCase(ExtractFileExt(outArg)) = '.res') then
+    isRes := True;
 
-  EmitUnit(outArg, unitArg);
+  if isRes then
+  begin
+    if outArg = '' then
+      outArg := 'ftml_resources.res';
+    EmitRes(outArg);
+  end
+  else
+  begin
+    if outArg = '' then
+      outArg := GOutFile;
+    if unitArg = '' then
+      unitArg := SanitizeIdent(LowerCase(BaseNameNoExt(outArg)));
+    if outArg = '' then
+      outArg := unitArg + '.pas';
+    EmitUnit(outArg, unitArg);
+  end;
 end.

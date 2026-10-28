@@ -169,11 +169,17 @@ type
     constructor Create(AWidth, AHeight: Integer; const ATitle: string = '';
       const ADesignName: string = ''); reintroduce;
     procedure LoadDesign(); virtual;
+    function  ReadComponentRes(const AResName: string): Boolean;
 
     property DesignName: string read FDesignName;
     property DesignFileName: string read FDesignFileName;
     property ExternalDesign: Boolean read FExternalDesign;
   end;
+
+  { Resource loading functions mirroring the Lazarus/Delphi ReadComponentRes model }
+  function ReadComponentRes(const AResName: string; AForm: TFtFTMLForm): Boolean; overload;
+  function ReadComponentRes(const AResName: string; out ASource: string): Boolean; overload;
+  function InitComponentRes(const AResName: string; AForm: TFtFTMLForm): Boolean;
 
 implementation
 
@@ -1469,13 +1475,87 @@ begin
     Exit(True);
   end;
 
-  { 2. Embedded resource, by explicit design name then by class name. }
+  { 2. Native embedded FPC resource via ReadComponentRes }
+  if ftpas.ftml.ReadComponentRes(FDesignName, ASource) then
+  begin
+    AFileName := FDesignName;
+    Exit(True);
+  end;
+  if ftpas.ftml.ReadComponentRes(ClassName, ASource) then
+  begin
+    AFileName := ClassName;
+    Exit(True);
+  end;
+
+  { 3. Fallback: check registered in-memory FTML resource }
   if EmbeddedFTMLSource(FDesignName, ASource, AFileName) then
     Exit(True);
   if EmbeddedFTMLSource(ClassName, ASource, AFileName) then
     Exit(True);
 
   Result := False;
+end;
+
+function ReadComponentRes(const AResName: string; out ASource: string): Boolean;
+var
+  H: TFPResourceHandle;
+  Stream: TResourceStream;
+  ActualName: string;
+begin
+  Result := False;
+  ASource := '';
+  if AResName = '' then Exit;
+
+  { 1. Check FPC native resource compiled with {$R ...} as RT_RCDATA }
+  ActualName := UpperCase(AResName);
+  H := system.FindResource(HInstance, ActualName, RT_RCDATA);
+  if PtrInt(H) = 0 then
+  begin
+    ActualName := AResName;
+    H := system.FindResource(HInstance, ActualName, RT_RCDATA);
+  end;
+
+  if PtrInt(H) <> 0 then
+  begin
+    Stream := TResourceStream.Create(HInstance, ActualName, RT_RCDATA);
+    try
+      if Stream.Size > 0 then
+      begin
+        SetLength(ASource, Stream.Size);
+        Stream.ReadBuffer(ASource[1], Stream.Size);
+        Result := True;
+      end;
+    finally
+      Stream.Free();
+    end;
+    Exit;
+  end;
+
+  { 2. Fallback: check registered in-memory FTML resource }
+  Result := EmbeddedFTMLSource(AResName, ASource, ActualName) or
+            EmbeddedFTMLSource(UpperCase(AResName), ASource, ActualName);
+end;
+
+function ReadComponentRes(const AResName: string; AForm: TFtFTMLForm): Boolean;
+var
+  src: string;
+begin
+  Result := False;
+  if (AForm = nil) or (AResName = '') then Exit;
+  if not ReadComponentRes(AResName, src) then Exit;
+  Result := AForm.LoadString(src) <> nil;
+  if Result and (AForm.Width > 0) and (AForm.Height > 0) then
+    AForm.DoResize(AForm.Width, AForm.Height);
+end;
+
+function InitComponentRes(const AResName: string; AForm: TFtFTMLForm): Boolean;
+begin
+  Result := ReadComponentRes(AResName, AForm);
+end;
+
+function TFtFTMLForm.ReadComponentRes(const AResName: string): Boolean;
+begin
+  Result := ftpas.ftml.ReadComponentRes(AResName, Self);
 end;
 
 procedure TFtFTMLForm.LoadDesign();

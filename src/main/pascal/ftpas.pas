@@ -155,6 +155,10 @@ function  FtColor(R, G, B: Double; A: Double = 1.0): TFtColor; inline;
 function  FtColorHex(const AHex: string): TFtColor; inline;
 function  FtRect(AX, AY, AW, AH: Integer): TFtRect; inline;
 function  FtPoint2D(AX, AY: Single): TFtPoint2D; inline;
+function  ReadComponentRes(const AResName: string; AForm: TFtFTMLForm): Boolean; inline; overload;
+function  ReadComponentRes(const AResName: string; out ASource: string): Boolean; inline; overload;
+function  InitComponentRes(const AResName: string; AForm: TFtFTMLForm): Boolean; inline;
+procedure RegisterFTMLResource(const AName, AFileName: string; AData: PChar; ASize: Integer); inline;
 
 implementation
 
@@ -181,6 +185,26 @@ end;
 function FtPoint2D(AX, AY: Single): TFtPoint2D;
 begin
   Result := ftpas.gpu.FtPoint2D(AX, AY);
+end;
+
+function ReadComponentRes(const AResName: string; AForm: TFtFTMLForm): Boolean;
+begin
+  Result := ftpas.ftml.ReadComponentRes(AResName, AForm);
+end;
+
+function ReadComponentRes(const AResName: string; out ASource: string): Boolean;
+begin
+  Result := ftpas.ftml.ReadComponentRes(AResName, ASource);
+end;
+
+function InitComponentRes(const AResName: string; AForm: TFtFTMLForm): Boolean;
+begin
+  Result := ftpas.ftml.InitComponentRes(AResName, AForm);
+end;
+
+procedure RegisterFTMLResource(const AName, AFileName: string; AData: PChar; ASize: Integer);
+begin
+  ftpas.ftml.res.RegisterFTMLResource(AName, AFileName, AData, ASize);
 end;
 
 end.
