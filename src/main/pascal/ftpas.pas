@@ -33,7 +33,8 @@ uses
   ftpas.gpu,
   floriajs,
   ftpas.ftml,
-  ftpas.ftml.res;
+  ftpas.ftml.res,
+  ftpas.ftml.embed;
 
 type
   { Core Records & Enums }
@@ -144,6 +145,8 @@ type
   TFtFTMLForm            = ftpas.ftml.TFtFTMLForm;
   TFtFTMLWidgetCreatedEvent = ftpas.ftml.TFtFTMLWidgetCreatedEvent;
   TFtFTMLResource        = ftpas.ftml.res.TFtFTMLResource;
+  TFtFTMLEmbedItem       = ftpas.ftml.embed.TFtFTMLEmbedItem;
+  TFtFTMLEmbedder        = ftpas.ftml.embed.TFtFTMLEmbedder;
   TFloriaFTMLEngine      = floriajs.TFloriaFTMLEngine;
   TFloriaFTMLItem        = floriajs.TFloriaFTMLItem;
   TFloriaJSValue         = floriajs.TFloriaJSValue;
@@ -159,6 +162,8 @@ function  ReadComponentRes(const AResName: string; AForm: TFtFTMLForm): Boolean;
 function  ReadComponentRes(const AResName: string; out ASource: string): Boolean; inline; overload;
 function  InitComponentRes(const AResName: string; AForm: TFtFTMLForm): Boolean; inline;
 procedure RegisterFTMLResource(const AName, AFileName: string; AData: PChar; ASize: Integer); inline;
+function  CompileFTMLToRes(const AInputFiles: array of string; const AOutResFile: string): Boolean; inline;
+function  CompileFTMLToUnit(const AInputFiles: array of string; const AOutPasFile, AUnitName: string): Boolean; inline;
 
 implementation
 
@@ -205,6 +210,16 @@ end;
 procedure RegisterFTMLResource(const AName, AFileName: string; AData: PChar; ASize: Integer);
 begin
   ftpas.ftml.res.RegisterFTMLResource(AName, AFileName, AData, ASize);
+end;
+
+function CompileFTMLToRes(const AInputFiles: array of string; const AOutResFile: string): Boolean;
+begin
+  Result := ftpas.ftml.embed.CompileFTMLToRes(AInputFiles, AOutResFile);
+end;
+
+function CompileFTMLToUnit(const AInputFiles: array of string; const AOutPasFile, AUnitName: string): Boolean;
+begin
+  Result := ftpas.ftml.embed.CompileFTMLToUnit(AInputFiles, AOutPasFile, AUnitName);
 end;
 
 end.

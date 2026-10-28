@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <name>ftml-embed</name>
+  <version>0.0.1-SNAPSHOT</version>
+  <author>Dio Affriza</author>
+  <license>MPL-2.0</license>
+
+  <build>
+    <mainSource>ftml_embed.pas</mainSource>
+    <executableName>ftml_embed</executableName>
+    <projectType>application</projectType>
+    <outputDirectory>../../bin</outputDirectory>
+  </build>
+
+  <dependencies>
+    <dependency>
+      <name>florialib</name>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <name>floriajs</name>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <name>ftpas</name>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+  </dependencies>
+</project>

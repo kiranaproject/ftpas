@@ -100,6 +100,7 @@ type
     procedure TestFTMLFlexBoxAndGridContainers();
     procedure TestFTMLContainerAndPanel();
     procedure TestFTMLReadComponentRes();
+    procedure TestFTMLEmbedderModule();
   end;
 
 { TLibraryLoadingTest }
@@ -1007,6 +1008,30 @@ begin
     AssertTrue('Explicit ReadComponentRes call succeeds', form.ReadComponentRes('TTestFormRes'));
   finally
     form.Free();
+  end;
+end;
+
+procedure TFTMLIntegrationTest.TestFTMLEmbedderModule();
+var
+  embedder: TFtFTMLEmbedder;
+  item: TFtFTMLEmbedItem;
+  tmpRes: string;
+begin
+  embedder := TFtFTMLEmbedder.Create();
+  try
+    embedder.AddSource('TModuleTestWin', 'test_win.ftml', 'Container { id: moduleBox; width: 100; height: 100; }');
+    AssertEquals('Embedder item count is 1', 1, embedder.ItemCount);
+    item := embedder.GetItem(0);
+    AssertEquals('Form name is TModuleTestWin', 'TModuleTestWin', item.FormName);
+    AssertEquals('File name is test_win.ftml', 'test_win.ftml', item.FileName);
+
+    tmpRes := '/tmp/ftpas_module_test.res';
+    if FileExists(tmpRes) then DeleteFile(tmpRes);
+    embedder.EmitRes(tmpRes);
+    AssertTrue('Emitted .res file exists', FileExists(tmpRes));
+    DeleteFile(tmpRes);
+  finally
+    embedder.Free();
   end;
 end;
 

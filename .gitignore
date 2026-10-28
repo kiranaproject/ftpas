@@ -1,4 +1,6 @@
 target/
+bin/
+tools/ftml-embed/target/
 backup/
 *.ppu
 *.o
