@@ -55,6 +55,7 @@ type
     procedure TestLabelAndEntry();
     procedure TestSwitchAndCheckBox();
     procedure TestWidgetHierarchy();
+    procedure TestWidgetVisibilityAndShowing();
   end;
 
   { Test 5: Layout Containers & Size Group }
@@ -354,6 +355,67 @@ begin
     AssertTrue('Button parent should be window', btn.Parent = win);
     btn.Tag := 12345;
     AssertEquals('Widget tag should match', 12345, btn.Tag);
+  finally
+    win.Free();
+  end;
+end;
+
+procedure TWidgetAndControlsTest.TestWidgetVisibilityAndShowing();
+var
+  win: TFtWindow;
+  panel: TFtPanel;
+  btn: TFtButton;
+begin
+  win := TFtWindow.Create(400, 300, 'VisibilityTest');
+  try
+    panel := TFtPanel.Create(win, 10, 10, 200, 100);
+    btn := TFtButton.Create(panel, 5, 5, 80, 30, 'Action');
+
+    { Initial state: window starts hidden, child widgets start visible }
+    AssertFalse('Window hidden by default', win.Visible);
+    AssertFalse('Window not showing by default', win.Showing);
+    AssertTrue('Panel visible by default', panel.Visible);
+    AssertFalse('Panel not showing when window is hidden', panel.Showing);
+    AssertTrue('Button visible by default', btn.Visible);
+    AssertFalse('Button not showing when window is hidden', btn.Showing);
+
+    { Show window -> everything becomes showing }
+    win.Show();
+    AssertTrue('Window visible after Show()', win.Visible);
+    AssertTrue('Window showing after Show()', win.Showing);
+    AssertTrue('Panel showing after window Show()', panel.Showing);
+    AssertTrue('Button showing after window Show()', btn.Showing);
+
+    { Hide button directly }
+    btn.Visible := False;
+    AssertFalse('Button not visible after setting False', btn.Visible);
+    AssertFalse('Button not showing after setting False', btn.Showing);
+    AssertTrue('Panel still showing', panel.Showing);
+
+    { Re-show button via Show() }
+    btn.Show();
+    AssertTrue('Button visible after Show()', btn.Visible);
+    AssertTrue('Button showing after Show()', btn.Showing);
+
+    { Hide parent panel: button.Visible is True, but button.Showing must be False }
+    panel.Hide();
+    AssertFalse('Panel not visible after Hide()', panel.Visible);
+    AssertFalse('Panel not showing after Hide()', panel.Showing);
+    AssertTrue('Button visible remains True', btn.Visible);
+    AssertFalse('Button showing becomes False when parent hidden', btn.Showing);
+
+    { Re-show panel: button becomes showing again }
+    panel.Visible := True;
+    AssertTrue('Panel visible after Visible := True', panel.Visible);
+    AssertTrue('Panel showing after Visible := True', panel.Showing);
+    AssertTrue('Button showing after parent shown', btn.Showing);
+
+    { Hide top-level window: cascades through hierarchy }
+    win.Visible := False;
+    AssertFalse('Window not visible', win.Visible);
+    AssertFalse('Window not showing', win.Showing);
+    AssertFalse('Panel not showing when window hidden', panel.Showing);
+    AssertFalse('Button not showing when window hidden', btn.Showing);
   finally
     win.Free();
   end;

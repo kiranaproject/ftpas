@@ -344,6 +344,9 @@ var
   { Widget General }
   ft_widget_show: procedure(widget: TFtWidget); cdecl;
   ft_widget_hide: procedure(widget: TFtWidget); cdecl;
+  ft_widget_get_visible: function(widget: TFtWidget): cint32; cdecl;
+  ft_widget_set_visible: procedure(widget: TFtWidget; visible: cint32); cdecl;
+  ft_widget_is_showing: function(widget: TFtWidget): cint32; cdecl;
   ft_widget_invalidate: procedure(widget: TFtWidget); cdecl;
   ft_window_repaint: procedure(window: TFtWidget); cdecl;
   ft_widget_set_focus: procedure(widget: TFtWidget); cdecl;
@@ -1235,6 +1238,9 @@ begin
   { Bind Widget General }
   Pointer(ft_widget_show) := BindFunc('ft_widget_show');
   Pointer(ft_widget_hide) := BindFunc('ft_widget_hide');
+  Pointer(ft_widget_get_visible) := BindFunc('ft_widget_get_visible');
+  Pointer(ft_widget_set_visible) := BindFunc('ft_widget_set_visible');
+  Pointer(ft_widget_is_showing) := BindFunc('ft_widget_is_showing');
   Pointer(ft_widget_invalidate) := BindFunc('ft_widget_invalidate');
   Pointer(ft_window_repaint) := BindFunc('ft_window_repaint');
   Pointer(ft_widget_set_focus) := BindFunc('ft_widget_set_focus');

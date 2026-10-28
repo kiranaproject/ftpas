@@ -44,6 +44,7 @@ type
 
     function  GetVisible: Boolean;
     procedure SetVisible(AValue: Boolean);
+    function  GetShowing: Boolean;
     function  GetEnabled: Boolean;
     procedure SetEnabled(AValue: Boolean);
     function  GetFocused: Boolean;
@@ -129,6 +130,7 @@ type
     property Height: Integer read GetHeight write SetHeight;
 
     property Visible: Boolean read GetVisible write SetVisible;
+    property Showing: Boolean read GetShowing;
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property Focused: Boolean read GetFocused write SetFocused;
     property Focusable: Boolean read GetFocusable write SetFocusable;
@@ -335,20 +337,12 @@ end;
 
 procedure TFtWidget.Show();
 begin
-  if (FHandle <> nil) and Assigned(ft_widget_show) then
-  begin
-    ft_widget_show(FHandle);
-    FVisible := True;
-  end;
+  SetVisible(True);
 end;
 
 procedure TFtWidget.Hide();
 begin
-  if (FHandle <> nil) and Assigned(ft_widget_hide) then
-  begin
-    ft_widget_hide(FHandle);
-    FVisible := False;
-  end;
+  SetVisible(False);
 end;
 
 procedure TFtWidget.Invalidate();
@@ -462,15 +456,32 @@ end;
 
 function TFtWidget.GetVisible: Boolean;
 begin
-  Result := FVisible;
+  if (FHandle <> nil) and Assigned(ft_widget_get_visible) then
+    Result := (ft_widget_get_visible(FHandle) <> 0)
+  else
+    Result := FVisible;
 end;
 
 procedure TFtWidget.SetVisible(AValue: Boolean);
 begin
-  if AValue then
-    Show()
+  FVisible := AValue;
+  if (FHandle <> nil) and Assigned(ft_widget_set_visible) then
+    ft_widget_set_visible(FHandle, Ord(AValue));
+end;
+
+function TFtWidget.GetShowing: Boolean;
+begin
+  if (FHandle <> nil) and Assigned(ft_widget_is_showing) then
+    Result := (ft_widget_is_showing(FHandle) <> 0)
   else
-    Hide();
+  begin
+    if not FVisible then
+      Result := False
+    else if FParent <> nil then
+      Result := FParent.Showing
+    else
+      Result := FVisible;
+  end;
 end;
 
 function TFtWidget.GetEnabled: Boolean;
