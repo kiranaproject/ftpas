@@ -789,6 +789,8 @@ var
   ft_screen_get_height: function(): cint32; cdecl;
   ft_register_event_filter: procedure(filter: TFtEventFilterFunc); cdecl;
   ft_set_tick_callback: procedure(callback: TFtTickCallback; user_data: Pointer); cdecl;
+  // Optional; absent on older libft builds, so callers must check Assigned().
+  ft_set_timer: procedure(interval_ms: cint32; callback: TFtTickCallback; user_data: Pointer); cdecl;
   ft_backend_get_connection: function(): Pointer; cdecl;
   ft_backend_get_screen: function(): Pointer; cdecl;
   ft_backend_get_key_symbols: function(): Pointer; cdecl;
@@ -1687,6 +1689,7 @@ begin
   Pointer(ft_screen_get_height) := BindFunc('ft_screen_get_height');
   Pointer(ft_register_event_filter) := BindFunc('ft_register_event_filter');
   Pointer(ft_set_tick_callback) := BindFunc('ft_set_tick_callback');
+  Pointer(ft_set_timer) := BindFunc('ft_set_timer');
   Pointer(ft_backend_get_connection) := BindFunc('ft_backend_get_connection');
   Pointer(ft_backend_get_screen) := BindFunc('ft_backend_get_screen');
   Pointer(ft_backend_get_key_symbols) := BindFunc('ft_backend_get_key_symbols');
