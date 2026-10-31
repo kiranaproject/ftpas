@@ -412,6 +412,8 @@ var
   ft_button_get_corner_radius: function(button: TFtWidget): Double; cdecl;
   ft_button_set_shadow: procedure(button: TFtWidget; enabled: cint32); cdecl;
   ft_button_get_shadow: function(button: TFtWidget): cint32; cdecl;
+  ft_button_set_flat: procedure(button: TFtWidget; flat: cint32); cdecl;
+  ft_button_get_flat: function(button: TFtWidget): cint32; cdecl;
   ft_button_set_caption: procedure(button: TFtWidget; caption: PChar); cdecl;
   ft_button_get_caption: function(button: TFtWidget): PChar; cdecl;
   ft_button_set_icon_file: procedure(button: TFtWidget; filepath: PChar); cdecl;
@@ -1317,6 +1319,8 @@ begin
   Pointer(ft_button_get_corner_radius) := BindFunc('ft_button_get_corner_radius');
   Pointer(ft_button_set_shadow) := BindFunc('ft_button_set_shadow');
   Pointer(ft_button_get_shadow) := BindFunc('ft_button_get_shadow');
+  Pointer(ft_button_set_flat) := BindFunc('ft_button_set_flat');
+  Pointer(ft_button_get_flat) := BindFunc('ft_button_get_flat');
   Pointer(ft_button_set_caption) := BindFunc('ft_button_set_caption');
   Pointer(ft_button_get_caption) := BindFunc('ft_button_get_caption');
   Pointer(ft_button_set_icon_file) := BindFunc('ft_button_set_icon_file');

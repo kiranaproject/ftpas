@@ -82,6 +82,8 @@ type
     procedure SetCornerRadius(AValue: Double);
     function  GetShadow: Boolean;
     procedure SetShadow(AValue: Boolean);
+    function  GetFlat: Boolean;
+    procedure SetFlat(AValue: Boolean);
     function  GetIsToggle: Boolean;
     procedure SetIsToggle(AValue: Boolean);
     function  GetToggled: Boolean;
@@ -119,6 +121,7 @@ type
     property Caption: string read GetCaption write SetCaption;
     property CornerRadius: Double read GetCornerRadius write SetCornerRadius;
     property Shadow: Boolean read GetShadow write SetShadow;
+    property Flat: Boolean read GetFlat write SetFlat;
     property IsToggle: Boolean read GetIsToggle write SetIsToggle;
     property Toggled: Boolean read GetToggled write SetToggled;
     property State: TFtButtonState read GetState;
@@ -785,6 +788,20 @@ procedure TFtButton.SetShadow(AValue: Boolean);
 begin
   if (Handle <> nil) and Assigned(ft_button_set_shadow) then
     ft_button_set_shadow(Handle, Ord(AValue));
+end;
+
+function TFtButton.GetFlat: Boolean;
+begin
+  if (Handle <> nil) and Assigned(ft_button_get_flat) then
+    Result := (ft_button_get_flat(Handle) <> 0)
+  else
+    Result := False;
+end;
+
+procedure TFtButton.SetFlat(AValue: Boolean);
+begin
+  if (Handle <> nil) and Assigned(ft_button_set_flat) then
+    ft_button_set_flat(Handle, Ord(AValue));
 end;
 
 function TFtButton.GetIsToggle: Boolean;

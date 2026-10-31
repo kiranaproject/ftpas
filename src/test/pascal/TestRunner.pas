@@ -291,6 +291,11 @@ begin
     AssertEquals('Button default padding_x should be 8.0', 8.0, btn.PaddingX);
     btn.PaddingX := 12.0;
     AssertEquals('Button padding_x should update to 12.0', 12.0, btn.PaddingX);
+    AssertFalse('Button default Flat should be false', btn.Flat);
+    btn.Flat := True;
+    AssertTrue('Button Flat should update to true', btn.Flat);
+    btn.Flat := False;
+    AssertFalse('Button Flat should reset to false', btn.Flat);
   finally
     win.Free();
   end;
