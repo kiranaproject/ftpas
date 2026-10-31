@@ -315,6 +315,9 @@ begin
     AssertEquals('Entry text should match', 'alice@example.com', entry.Text);
     entry.Placeholder := 'Enter email';
     AssertEquals('Entry placeholder should match', 'Enter email', entry.Placeholder);
+    AssertEquals('Entry default corner radius should resolve to CSS border-radius', 5.0, entry.CornerRadius, 0.001);
+    entry.CornerRadius := 8.0;
+    AssertEquals('Entry corner radius should update to 8.0', 8.0, entry.CornerRadius, 0.001);
   finally
     win.Free();
   end;

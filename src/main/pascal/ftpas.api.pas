@@ -501,6 +501,7 @@ var
   ft_entry_on_change: procedure(entry: TFtWidget; callback: TFtEntryChangeCallback; user_data: Pointer); cdecl;
   ft_entry_on_submit: procedure(entry: TFtWidget; callback: TFtEntrySubmitCallback; user_data: Pointer); cdecl;
   ft_entry_set_corner_radius: procedure(entry: TFtWidget; radius: Double); cdecl;
+  ft_entry_get_corner_radius: function(entry: TFtWidget): Double; cdecl;
 
   { PathBar }
   ft_path_bar_create: function(parent: TFtWidget; x, y, w, h: cint32; initial_path: PChar): TFtWidget; cdecl;
@@ -554,6 +555,7 @@ var
   ft_textarea_get_readonly: function(textarea: TFtWidget): cint32; cdecl;
   ft_textarea_on_change: procedure(textarea: TFtWidget; callback: TFtTextAreaChangeCallback; user_data: Pointer); cdecl;
   ft_textarea_set_corner_radius: procedure(textarea: TFtWidget; radius: Double); cdecl;
+  ft_textarea_get_corner_radius: function(textarea: TFtWidget): Double; cdecl;
   ft_textarea_set_scrollbar_mode: procedure(textarea: TFtWidget; mode: cint32); cdecl;
   ft_textarea_get_scrollbar_mode: function(textarea: TFtWidget): cint32; cdecl;
   ft_textarea_get_vscrollbar: function(textarea: TFtWidget): TFtWidget; cdecl;
@@ -1404,6 +1406,7 @@ begin
   Pointer(ft_entry_on_change) := BindFunc('ft_entry_on_change');
   Pointer(ft_entry_on_submit) := BindFunc('ft_entry_on_submit');
   Pointer(ft_entry_set_corner_radius) := BindFunc('ft_entry_set_corner_radius');
+  Pointer(ft_entry_get_corner_radius) := BindFunc('ft_entry_get_corner_radius');
 
   { Bind PathBar }
   Pointer(ft_path_bar_create) := BindFunc('ft_path_bar_create');
@@ -1457,6 +1460,7 @@ begin
   Pointer(ft_textarea_get_readonly) := BindFunc('ft_textarea_get_readonly');
   Pointer(ft_textarea_on_change) := BindFunc('ft_textarea_on_change');
   Pointer(ft_textarea_set_corner_radius) := BindFunc('ft_textarea_set_corner_radius');
+  Pointer(ft_textarea_get_corner_radius) := BindFunc('ft_textarea_get_corner_radius');
   Pointer(ft_textarea_set_scrollbar_mode) := BindFunc('ft_textarea_set_scrollbar_mode');
   Pointer(ft_textarea_get_scrollbar_mode) := BindFunc('ft_textarea_get_scrollbar_mode');
   Pointer(ft_textarea_get_vscrollbar) := BindFunc('ft_textarea_get_vscrollbar');

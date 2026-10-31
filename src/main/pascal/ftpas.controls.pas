@@ -289,6 +289,7 @@ type
     procedure SetPlaceholder(const AValue: string);
     function  GetReadOnly: Boolean;
     procedure SetReadOnly(AValue: Boolean);
+    function  GetCornerRadius: Double;
     procedure SetCornerRadius(AValue: Double);
 
     procedure SetOnChange(AValue: TFtTextChangeEvent);
@@ -302,7 +303,7 @@ type
     property Text: string read GetText write SetText;
     property Placeholder: string read GetPlaceholder write SetPlaceholder;
     property ReadOnly: Boolean read GetReadOnly write SetReadOnly;
-    property CornerRadius: Double write SetCornerRadius;
+    property CornerRadius: Double read GetCornerRadius write SetCornerRadius;
 
     property OnChange: TFtTextChangeEvent read FOnChange write SetOnChange;
     property OnSubmit: TFtTextSubmitEvent read FOnSubmit write SetOnSubmit;
@@ -319,6 +320,7 @@ type
     procedure SetPlaceholder(const AValue: string);
     function  GetReadOnly: Boolean;
     procedure SetReadOnly(AValue: Boolean);
+    function  GetCornerRadius: Double;
     procedure SetCornerRadius(AValue: Double);
     function  GetScrollBarMode: TFtScrollBarMode;
     procedure SetScrollBarMode(AValue: TFtScrollBarMode);
@@ -332,7 +334,7 @@ type
     property Text: string read GetText write SetText;
     property Placeholder: string read GetPlaceholder write SetPlaceholder;
     property ReadOnly: Boolean read GetReadOnly write SetReadOnly;
-    property CornerRadius: Double write SetCornerRadius;
+    property CornerRadius: Double read GetCornerRadius write SetCornerRadius;
     property ScrollBarMode: TFtScrollBarMode read GetScrollBarMode write SetScrollBarMode;
 
     property OnChange: TFtTextChangeEvent read FOnChange write SetOnChange;
@@ -1507,6 +1509,14 @@ begin
     ft_entry_set_readonly(Handle, Ord(AValue));
 end;
 
+function TFtEntry.GetCornerRadius: Double;
+begin
+  if (Handle <> nil) and Assigned(ft_entry_get_corner_radius) then
+    Result := ft_entry_get_corner_radius(Handle)
+  else
+    Result := 0.0;
+end;
+
 procedure TFtEntry.SetCornerRadius(AValue: Double);
 begin
   if (Handle <> nil) and Assigned(ft_entry_set_corner_radius) then
@@ -1594,6 +1604,14 @@ procedure TFtTextArea.SetReadOnly(AValue: Boolean);
 begin
   if (Handle <> nil) and Assigned(ft_textarea_set_readonly) then
     ft_textarea_set_readonly(Handle, Ord(AValue));
+end;
+
+function TFtTextArea.GetCornerRadius: Double;
+begin
+  if (Handle <> nil) and Assigned(ft_textarea_get_corner_radius) then
+    Result := ft_textarea_get_corner_radius(Handle)
+  else
+    Result := 0.0;
 end;
 
 procedure TFtTextArea.SetCornerRadius(AValue: Double);
