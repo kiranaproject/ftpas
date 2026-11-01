@@ -529,10 +529,20 @@ begin
   FBindings[FBindingCount].TypeName := AItem.TypeName;
   FBindings[FBindingCount].LastText := AItem.GetPropertyAsString('text', '');
   FBindings[FBindingCount].LastRadius := AItem.GetPropertyAsNumber('radius', 0.0);
-  FBindings[FBindingCount].LastX := Round(AItem.X);
-  FBindings[FBindingCount].LastY := Round(AItem.Y);
-  FBindings[FBindingCount].LastW := Round(AItem.Width);
-  FBindings[FBindingCount].LastH := Round(AItem.Height);
+  if AWidget <> nil then
+  begin
+    FBindings[FBindingCount].LastX := AWidget.X;
+    FBindings[FBindingCount].LastY := AWidget.Y;
+    FBindings[FBindingCount].LastW := AWidget.Width;
+    FBindings[FBindingCount].LastH := AWidget.Height;
+  end
+  else
+  begin
+    FBindings[FBindingCount].LastX := Round(AItem.X);
+    FBindings[FBindingCount].LastY := Round(AItem.Y);
+    FBindings[FBindingCount].LastW := Round(AItem.Width);
+    FBindings[FBindingCount].LastH := Round(AItem.Height);
+  end;
   FBindings[FBindingCount].LastVisible := AItem.Visible;
   FBindings[FBindingCount].LastChecked := AItem.GetPropertyAsBoolean('checked', False);
   FBindings[FBindingCount].LastValue := AItem.GetPropertyAsNumber('value', 0.0);
@@ -1931,12 +1941,13 @@ procedure TFtFTMLHost.SyncProperties();
 var
   i: Integer;
   item: TFloriaFTMLItem;
-  W, curParent: TFtWidget;
+  W: TFtWidget;
   curText, curColor, alignStr, kindStr: string;
   curRad, curVal, cr, cg, cb, curFlexG: Double;
   curCheck, curVis, layoutNeeded: Boolean;
   newAlign: TFtAlignSelf;
-  ix, iy, iw, ih: Integer;
+  ix, iy, iw, ih, wx, wy: Integer;
+  cx, cy, cw, ch: Double;
   btnKind: TFtWindowButtonKind;
   anchorMode: TFtAnchorMode;
 begin
@@ -2153,36 +2164,50 @@ begin
       iy := Round(item.Y);
       iw := Round(item.Width);
       ih := Round(item.Height);
-      if (ix <> FBindings[i].LastX) or (iy <> FBindings[i].LastY) or
-         (iw <> FBindings[i].LastW) or (ih <> FBindings[i].LastH) then
+
+      if (W <> Self) and not (W is TFtMainMenu) and not (W is TFtPopupMenu) and
+         not ((W.Parent is TFtFlexBox) or (W.Parent is TFtGrid)) then
       begin
-        if (iw > 0) and (ih > 0) then
+        wx := ix;
+        wy := iy;
+        if (W.Parent <> nil) and (W.Parent <> Self) and not (W.Parent is TFtWindow) then
         begin
-          if (W <> Self) and not (W is TFtMainMenu) and not (W is TFtPopupMenu) and not ((W.Parent is TFtFlexBox) or (W.Parent is TFtGrid)) then
+          if W.Parent is TFtContainer then
           begin
-            if W is TFtMainMenu then
-            begin
-              ix := 0;
-              iy := 0;
-            end
-            else
-            begin
-              curParent := W.Parent;
-              while (curParent <> nil) and (curParent <> Self) do
-              begin
-                if curParent is TFtWindow then Break;
-                Inc(ix, curParent.X);
-                Inc(iy, curParent.Y);
-                curParent := curParent.Parent;
-              end;
-            end;
-            W.SetBounds(ix, iy, iw, ih);
+            TFtContainer(W.Parent).GetClientRect(cx, cy, cw, ch);
+            Inc(wx, Round(cx - TFtContainer(W.Parent).ScrollX));
+            Inc(wy, Round(cy - TFtContainer(W.Parent).ScrollY));
+          end
+          else
+          begin
+            Inc(wx, W.Parent.X);
+            Inc(wy, W.Parent.Y);
           end;
-          FBindings[i].LastX := Round(item.X);
-          FBindings[i].LastY := Round(item.Y);
+        end;
+
+        if (wx <> FBindings[i].LastX) or (wy <> FBindings[i].LastY) or
+           (iw <> FBindings[i].LastW) or (ih <> FBindings[i].LastH) then
+        begin
+          if (iw > 0) and (ih > 0) then
+          begin
+            W.SetBounds(wx, wy, iw, ih);
+            FBindings[i].LastX := wx;
+            FBindings[i].LastY := wy;
+            FBindings[i].LastW := iw;
+            FBindings[i].LastH := ih;
+            layoutNeeded := True;
+          end;
+        end;
+      end
+      else
+      begin
+        if (ix <> FBindings[i].LastX) or (iy <> FBindings[i].LastY) or
+           (iw <> FBindings[i].LastW) or (ih <> FBindings[i].LastH) then
+        begin
+          FBindings[i].LastX := ix;
+          FBindings[i].LastY := iy;
           FBindings[i].LastW := iw;
           FBindings[i].LastH := ih;
-          layoutNeeded := True;
         end;
       end;
 

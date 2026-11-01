@@ -980,6 +980,16 @@ begin
     AssertEquals('Body Y', 110, bodyW.Y);
     AssertEquals('Body Width', 560, bodyW.Width);
     AssertEquals('Body Height', 270, bodyW.Height);
+
+    // Test resize reflow
+    host.SetBounds(0, 0, 800, 500);
+    root.Width := 800;
+    root.Height := 500;
+    host.SyncProperties();
+
+    AssertEquals('Header Width after resize', 760, headerW.Width);
+    AssertEquals('Body Width after resize', 760, bodyW.Width);
+    AssertEquals('Body Height after resize', 370, bodyW.Height);
   finally
     win.Free();
   end;
