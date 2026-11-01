@@ -17,7 +17,8 @@ unit ftpas.views;
 interface
 
 uses
-  ctypes, Classes, SysUtils, ftpas.api, ftpas.types, ftpas.canvas, ftpas.widget;
+  ctypes, Classes, SysUtils, ftpas.api, ftpas.types, ftpas.canvas, ftpas.widget,
+  ftpas.layouts;
 
 type
   { Forward Declarations }
@@ -68,7 +69,7 @@ type
   end;
 
   { TFtTreeView — Hierarchical TreeView widget }
-  TFtTreeView = class(TFtWidget)
+  TFtTreeView = class(TFtContainer)
   private
     FOnSelect: TFtTreeNodeSelectEvent;
 
@@ -99,7 +100,7 @@ type
   end;
 
   { TFtTable — Multi-column DataGrid table widget }
-  TFtTable = class(TFtWidget)
+  TFtTable = class(TFtContainer)
   private
     FOnSelectRow: TFtTableRowSelectEvent;
     FOnRowDoubleClick: TFtTableRowDblClickEvent;
@@ -387,7 +388,7 @@ constructor TFtTreeView.Create(AParent: TFtWidget; AX, AY, AW, AH: Integer);
 var
   pHandle, h: Pointer;
 begin
-  inherited Create(AParent);
+  inherited Create(AParent, AX, AY, AW, AH);
   if AParent <> nil then pHandle := AParent.Handle else pHandle := nil;
   if Assigned(ft_treeview_create) then
     h := ft_treeview_create(pHandle, AX, AY, AW, AH)
@@ -512,7 +513,7 @@ constructor TFtTable.Create(AParent: TFtWidget; AX, AY, AW, AH: Integer);
 var
   pHandle, h: Pointer;
 begin
-  inherited Create(AParent);
+  inherited Create(AParent, AX, AY, AW, AH);
   if AParent <> nil then pHandle := AParent.Handle else pHandle := nil;
   if Assigned(ft_table_create) then
     h := ft_table_create(pHandle, AX, AY, AW, AH)

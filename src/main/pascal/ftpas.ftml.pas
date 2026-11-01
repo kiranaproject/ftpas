@@ -1557,6 +1557,8 @@ begin
       TFtTreeView(W).ItemHeight := AItem.GetPropertyAsNumber('itemHeight', 24.0);
     if AItem.HasProperty('indentWidth') then
       TFtTreeView(W).IndentWidth := AItem.GetPropertyAsNumber('indentWidth', 16.0);
+    if AItem.HasProperty('drawFrame') then
+      TFtTreeView(W).DrawFrame := AItem.GetPropertyAsBoolean('drawFrame', False);
     childrenHandled := True;
     PopulateTreeNodes(AItem, nil, TFtTreeView(W));
     AttachSignals(AItem, W);
@@ -1580,6 +1582,8 @@ begin
       TFtTable(W).ZebraStriping := AItem.GetPropertyAsBoolean('zebraStriping', True);
     if AItem.HasProperty('multiSelect') then
       TFtTable(W).MultiSelect := AItem.GetPropertyAsBoolean('multiSelect', False);
+    if AItem.HasProperty('drawFrame') then
+      TFtTable(W).DrawFrame := AItem.GetPropertyAsBoolean('drawFrame', False);
 
     childrenHandled := True;
     for i := 0 to AItem.ChildCount() - 1 do
