@@ -230,6 +230,14 @@ begin
     ft_window_on_close(wHandle, @WindowCloseDispatcher, Pointer(Self));
   if (wHandle <> nil) and Assigned(ft_window_on_resize) then
     ft_window_on_resize(wHandle, @WindowResizeDispatcher, Pointer(Self));
+  if (wHandle <> nil) and Assigned(ft_window_on_mouse_down) then
+    ft_window_on_mouse_down(wHandle, @WindowMouseDownDispatcher, Pointer(Self));
+  if (wHandle <> nil) and Assigned(ft_window_on_mouse_up) then
+    ft_window_on_mouse_up(wHandle, @WindowMouseUpDispatcher, Pointer(Self));
+  if (wHandle <> nil) and Assigned(ft_window_on_mouse_move) then
+    ft_window_on_mouse_move(wHandle, @WindowMouseMoveDispatcher, Pointer(Self));
+  if (wHandle <> nil) and Assigned(ft_window_on_key) then
+    ft_window_on_key(wHandle, @WindowKeyDispatcher, Pointer(Self));
   if (wHandle <> nil) and Assigned(ft_window_on_controls_inset_changed) then
     ft_window_on_controls_inset_changed(wHandle, @WindowControlsInsetDispatcher, Pointer(Self));
 end;
@@ -253,6 +261,14 @@ begin
     ft_window_on_close(wHandle, @WindowCloseDispatcher, Pointer(Self));
   if (wHandle <> nil) and Assigned(ft_window_on_resize) then
     ft_window_on_resize(wHandle, @WindowResizeDispatcher, Pointer(Self));
+  if (wHandle <> nil) and Assigned(ft_window_on_mouse_down) then
+    ft_window_on_mouse_down(wHandle, @WindowMouseDownDispatcher, Pointer(Self));
+  if (wHandle <> nil) and Assigned(ft_window_on_mouse_up) then
+    ft_window_on_mouse_up(wHandle, @WindowMouseUpDispatcher, Pointer(Self));
+  if (wHandle <> nil) and Assigned(ft_window_on_mouse_move) then
+    ft_window_on_mouse_move(wHandle, @WindowMouseMoveDispatcher, Pointer(Self));
+  if (wHandle <> nil) and Assigned(ft_window_on_key) then
+    ft_window_on_key(wHandle, @WindowKeyDispatcher, Pointer(Self));
   if (wHandle <> nil) and Assigned(ft_window_on_controls_inset_changed) then
     ft_window_on_controls_inset_changed(wHandle, @WindowControlsInsetDispatcher, Pointer(Self));
 end;

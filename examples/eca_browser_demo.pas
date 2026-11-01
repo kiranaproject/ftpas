@@ -212,11 +212,41 @@ const
     '  }' + LineEnding +
     '}';
 
+type
+  TEcaBrowserWindow = class(TFtFTMLWindow)
+  protected
+    procedure DoMouseDown(AX, AY, AButton: Integer); override;
+  end;
+
+procedure TEcaBrowserWindow.DoMouseDown(AX, AY, AButton: Integer);
 var
-  MainWindow: TFtFTMLWindow;
+  wx, wy, rootX, rootY: Integer;
+  tabStartX, tabEndX: Integer;
+begin
+  inherited DoMouseDown(AX, AY, AButton);
+
+  if (AButton = 1) and (AY <= 42) then
+  begin
+    tabStartX := WindowControlsInset.Left + 8;
+    tabEndX := tabStartX + (3 * (130 + 6)) + 20;
+
+    // Only initiate move if clicking outside the tab buttons strip
+    if (AX < tabStartX) or (AX > tabEndX) then
+    begin
+      GetPosition(wx, wy);
+      rootX := wx + AX;
+      rootY := wy + AY;
+      WriteLn('[FTML ECA Browser] Window drag initiated via _NET_WM_MOVERESIZE at root (', rootX, ', ', rootY, ')');
+      BeginWindowMove(rootX, rootY);
+    end;
+  end;
+end;
+
+var
+  MainWindow: TEcaBrowserWindow;
 
 begin
-  MainWindow := TFtFTMLWindow.Create(960, 600, 'Floria Toolkit (ftpas) — ECA Browser Demo');
+  MainWindow := TEcaBrowserWindow.Create(960, 600, 'Floria Toolkit (ftpas) — ECA Browser Demo');
   try
     if MainWindow.LoadString(BROWSER_FTML) = nil then
     begin
