@@ -824,15 +824,23 @@ begin
     if rad > 0.0 then
       TFtContainer(W).CornerRadius := rad;
 
-    colorStr := AItem.GetPropertyAsString('color');
-    borderCol := AItem.GetPropertyAsString('borderColor');
-    if (colorStr <> '') or (borderCol <> '') then
+    styleStr := AItem.GetPropertyAsString('style', '');
+    if styleStr <> '' then
+      W.Style := styleStr
+    else
     begin
-      if borderCol <> '' then
-        W.Style := 'background-color: ' + colorStr + '; border: 1px solid ' + borderCol + ';'
-      else
-        W.Style := 'background-color: ' + colorStr + ';';
+      colorStr := AItem.GetPropertyAsString('color');
+      borderCol := AItem.GetPropertyAsString('borderColor');
+      if (colorStr <> '') or (borderCol <> '') then
+      begin
+        if borderCol <> '' then
+          W.Style := 'background-color: ' + colorStr + '; border: 1px solid ' + borderCol + ';'
+        else
+          W.Style := 'background-color: ' + colorStr + ';';
+      end;
     end;
+    if AItem.HasProperty('drawFrame') then
+      TFtContainer(W).DrawFrame := AItem.GetPropertyAsBoolean('drawFrame', False);
   end
   else if (AItem.TypeName = 'Panel') or (AItem.TypeName = 'Card') then
   begin
@@ -874,15 +882,23 @@ begin
     if rad > 0.0 then
       TFtContainer(W).CornerRadius := rad;
 
-    colorStr := AItem.GetPropertyAsString('color');
-    borderCol := AItem.GetPropertyAsString('borderColor');
-    if (colorStr <> '') or (borderCol <> '') then
+    styleStr := AItem.GetPropertyAsString('style', '');
+    if styleStr <> '' then
+      W.Style := styleStr
+    else
     begin
-      if borderCol <> '' then
-        W.Style := 'background-color: ' + colorStr + '; border: 1px solid ' + borderCol + ';'
-      else
-        W.Style := 'background-color: ' + colorStr + ';';
+      colorStr := AItem.GetPropertyAsString('color');
+      borderCol := AItem.GetPropertyAsString('borderColor');
+      if (colorStr <> '') or (borderCol <> '') then
+      begin
+        if borderCol <> '' then
+          W.Style := 'background-color: ' + colorStr + '; border: 1px solid ' + borderCol + ';'
+        else
+          W.Style := 'background-color: ' + colorStr + ';';
+      end;
     end;
+    if AItem.HasProperty('drawFrame') then
+      TFtContainer(W).DrawFrame := AItem.GetPropertyAsBoolean('drawFrame', False);
   end
   else if AItem.TypeName = 'Button' then
   begin
@@ -1698,6 +1714,11 @@ begin
       W.StyleClass := clsStr;
     if AItem.Id <> '' then
       W.StyleId := AItem.Id;
+    styleStr := AItem.GetPropertyAsString('style', '');
+    if styleStr <> '' then
+      W.Style := styleStr;
+    if AItem.HasProperty('drawFrame') and (W is TFtContainer) then
+      TFtContainer(W).DrawFrame := AItem.GetPropertyAsBoolean('drawFrame', False);
   end;
 
   // Apply child layout constraints on native widget
