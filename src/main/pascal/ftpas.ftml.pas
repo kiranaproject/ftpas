@@ -206,6 +206,9 @@ type
 
 implementation
 
+uses
+  ftpas.app;
+
 function FindAncestorWindow(AWidget: TFtWidget): TFtWindow; forward;
 
 { TFtFTMLSignalBridge }
@@ -875,8 +878,23 @@ begin
   begin
     if iw <= 0 then iw := 120;
     if ih <= 0 then ih := 36;
-    cap := AItem.GetPropertyAsString('text', 'Button');
+    cap := AItem.GetPropertyAsString('text', '');
+    if not AItem.HasProperty('text') and not AItem.HasProperty('icon') then
+      cap := 'Button';
     W := TFtButton.Create(AParentWidget, ix, iy, iw, ih, cap);
+    if AItem.HasProperty('icon') then
+    begin
+      kindStr := AItem.GetPropertyAsString('icon');
+      if FtApp().HasIcon(kindStr) then
+      begin
+        TFtButton(W).SetIconSVG(FtApp().GetIconSvg(kindStr, FtApp().DarkMode));
+        if not AItem.HasProperty('text') then
+        begin
+          TFtButton(W).IconPosition := ftipOnly;
+          TFtButton(W).Caption := '';
+        end;
+      end;
+    end;
     AttachSignals(AItem, W);
   end
   else if (AItem.TypeName = 'Text') or (AItem.TypeName = 'Label') then

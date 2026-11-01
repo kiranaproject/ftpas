@@ -459,7 +459,7 @@ begin
     if ADarkMode then dm := 1 else dm := 0;
     h := ft_icon_get_bitmap(PChar(AName), AWidth, AHeight, dm);
     if h <> nil then
-      Result := TFtBitmap.Wrap(h);
+      Result := TFtBitmap.Wrap(h, True);
   end;
 end;
 
