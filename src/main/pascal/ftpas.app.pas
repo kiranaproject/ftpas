@@ -73,6 +73,7 @@ type
     { Icon Registry }
     function  GetIconSvg(const AName: string; ADarkMode: Boolean = False): string;
     function  GetIconBitmap(const AName: string; AWidth, AHeight: Integer; ADarkMode: Boolean = False): TFtBitmap;
+    function  GetKeyboardModifiers(): Cardinal;
     procedure RegisterIcon(const AName, ASvgLight, ASvgDark: string);
     function  HasIcon(const AName: string): Boolean;
     procedure SetIconMonochromeColors(const ALightColor, ADarkColor: string);
@@ -461,6 +462,14 @@ begin
     if h <> nil then
       Result := TFtBitmap.Wrap(h, True);
   end;
+end;
+
+function TFtApp.GetKeyboardModifiers(): Cardinal;
+begin
+  if Assigned(ft_get_keyboard_modifiers) then
+    Result := Cardinal(ft_get_keyboard_modifiers())
+  else
+    Result := 0;
 end;
 
 procedure TFtApp.RegisterIcon(const AName, ASvgLight, ASvgDark: string);

@@ -303,6 +303,9 @@ type
   public
     constructor Create(AParent: TFtWidget; AX, AY, AW, AH: Integer; const AText: string = ''); reintroduce;
 
+    procedure SelectAll();
+    procedure ClearSelection();
+
     property Text: string read GetText write SetText;
     property Placeholder: string read GetPlaceholder write SetPlaceholder;
     property ReadOnly: Boolean read GetReadOnly write SetReadOnly;
@@ -1538,6 +1541,18 @@ procedure TFtEntry.SetCornerRadius(AValue: Double);
 begin
   if (Handle <> nil) and Assigned(ft_entry_set_corner_radius) then
     ft_entry_set_corner_radius(Handle, AValue);
+end;
+
+procedure TFtEntry.SelectAll();
+begin
+  if (Handle <> nil) and Assigned(ft_entry_select_all) then
+    ft_entry_select_all(Handle);
+end;
+
+procedure TFtEntry.ClearSelection();
+begin
+  if (Handle <> nil) and Assigned(ft_entry_clear_selection) then
+    ft_entry_clear_selection(Handle);
 end;
 
 procedure TFtEntry.SetOnChange(AValue: TFtTextChangeEvent);

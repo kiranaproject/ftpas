@@ -163,6 +163,12 @@ const
   FT_FILE_DIALOG_SAVE          = 1;
   FT_FILE_DIALOG_SELECT_FOLDER = 2;
 
+  { Keyboard Modifiers }
+  FT_KEY_MOD_SHIFT   = 1;
+  FT_KEY_MOD_LOCK    = 2;
+  FT_KEY_MOD_CONTROL = 4;
+  FT_KEY_MOD_ALT     = 8;
+
   { Modal Results }
   FT_MODAL_NONE    = 0;
   FT_MODAL_OK      = 1;
@@ -341,6 +347,8 @@ var
   ft_window_begin_resize: procedure(window: TFtWidget; root_x, root_y, direction: cint32); cdecl;
   ft_window_set_strut_partial: procedure(window: TFtWidget; left, right, top, bottom, left_start_y, left_end_y, right_start_y, right_end_y, top_start_x, top_end_x, bottom_start_x, bottom_end_x: cint32); cdecl;
   ft_window_show_modal: function(window: TFtWidget): cint32; cdecl;
+  ft_window_set_modal_result: procedure(window: TFtWidget; modal_result: cint32); cdecl;
+  ft_window_get_modal_result: function(window: TFtWidget): cint32; cdecl;
   ft_window_bring_to_front: procedure(window: TFtWidget); cdecl;
   ft_window_grab_input: procedure(window: TFtWidget); cdecl;
   ft_window_ungrab_input: procedure(window: TFtWidget); cdecl;
@@ -522,6 +530,8 @@ var
   ft_entry_on_submit: procedure(entry: TFtWidget; callback: TFtEntrySubmitCallback; user_data: Pointer); cdecl;
   ft_entry_set_corner_radius: procedure(entry: TFtWidget; radius: Double); cdecl;
   ft_entry_get_corner_radius: function(entry: TFtWidget): Double; cdecl;
+  ft_entry_select_all: procedure(entry: TFtWidget); cdecl;
+  ft_entry_clear_selection: procedure(entry: TFtWidget); cdecl;
 
   { PathBar }
   ft_path_bar_create: function(parent: TFtWidget; x, y, w, h: cint32; initial_path: PChar): TFtWidget; cdecl;
@@ -1160,6 +1170,7 @@ var
   ft_window_on_mouse_up: procedure(window: TFtWidget; callback: TFtWindowMouseCallback; user_data: Pointer); cdecl;
   ft_window_on_mouse_move: procedure(window: TFtWidget; callback: TFtWindowMouseMoveCallback; user_data: Pointer); cdecl;
   ft_window_on_key: procedure(window: TFtWidget; callback: TFtWindowKeyCallback; user_data: Pointer); cdecl;
+  ft_get_keyboard_modifiers: function(): cuint32; cdecl;
   ft_window_on_resize: procedure(window: TFtWidget; callback: TFtWindowResizeCallback; user_data: Pointer); cdecl;
   ft_window_on_close: procedure(window: TFtWidget; callback: TFtWindowCloseCallback; user_data: Pointer); cdecl;
   ft_batch_create: function(): TFtRenderBatch; cdecl;
@@ -1299,6 +1310,8 @@ begin
   Pointer(ft_window_begin_resize) := BindFunc('ft_window_begin_resize');
   Pointer(ft_window_set_strut_partial) := BindFunc('ft_window_set_strut_partial');
   Pointer(ft_window_show_modal) := BindFunc('ft_window_show_modal');
+  Pointer(ft_window_set_modal_result) := BindFunc('ft_window_set_modal_result');
+  Pointer(ft_window_get_modal_result) := BindFunc('ft_window_get_modal_result');
   Pointer(ft_window_bring_to_front) := BindFunc('ft_window_bring_to_front');
   Pointer(ft_window_grab_input) := BindFunc('ft_window_grab_input');
   Pointer(ft_window_ungrab_input) := BindFunc('ft_window_ungrab_input');
@@ -1480,6 +1493,8 @@ begin
   Pointer(ft_entry_on_submit) := BindFunc('ft_entry_on_submit');
   Pointer(ft_entry_set_corner_radius) := BindFunc('ft_entry_set_corner_radius');
   Pointer(ft_entry_get_corner_radius) := BindFunc('ft_entry_get_corner_radius');
+  Pointer(ft_entry_select_all) := BindFunc('ft_entry_select_all');
+  Pointer(ft_entry_clear_selection) := BindFunc('ft_entry_clear_selection');
 
   { Bind PathBar }
   Pointer(ft_path_bar_create) := BindFunc('ft_path_bar_create');
@@ -2112,6 +2127,7 @@ begin
   Pointer(ft_window_on_mouse_up) := BindFunc('ft_window_on_mouse_up');
   Pointer(ft_window_on_mouse_move) := BindFunc('ft_window_on_mouse_move');
   Pointer(ft_window_on_key) := BindFunc('ft_window_on_key');
+  Pointer(ft_get_keyboard_modifiers) := BindFunc('ft_get_keyboard_modifiers');
   Pointer(ft_window_on_resize) := BindFunc('ft_window_on_resize');
   Pointer(ft_window_on_close) := BindFunc('ft_window_on_close');
   Pointer(ft_batch_create) := BindFunc('ft_batch_create');

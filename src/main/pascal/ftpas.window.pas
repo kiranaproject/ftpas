@@ -64,6 +64,8 @@ type
     procedure SetBackgroundBlur(AValue: Integer);
     function  GetHardwareAccelerated: Boolean;
     procedure SetHardwareAccelerated(AValue: Boolean);
+    function  GetModalResult: Integer;
+    procedure SetModalResult(AValue: Integer);
     procedure SetSwapInterval(AValue: Integer);
     function  GetNativeHandle: Pointer;
 
@@ -118,6 +120,7 @@ type
     property WindowControlsInset: TFtWindowControlsInset read GetWindowControlsInset;
     property SkipTaskbar: Boolean read GetSkipTaskbar write SetSkipTaskbar;
     property WindowType: TFtWindowType read GetWindowType write SetWindowType;
+    property ModalResult: Integer read GetModalResult write SetModalResult;
     property BackgroundOpacity: Double read GetBackgroundOpacity write SetBackgroundOpacity;
     property BackgroundBlur: Integer read GetBackgroundBlur write SetBackgroundBlur;
     property HardwareAccelerated: Boolean read GetHardwareAccelerated write SetHardwareAccelerated;
@@ -285,6 +288,20 @@ begin
     Result := ft_window_show_modal(Handle)
   else
     Result := FT_MODAL_NONE;
+end;
+
+function TFtWindow.GetModalResult: Integer;
+begin
+  if (Handle <> nil) and Assigned(ft_window_get_modal_result) then
+    Result := ft_window_get_modal_result(Handle)
+  else
+    Result := FT_MODAL_NONE;
+end;
+
+procedure TFtWindow.SetModalResult(AValue: Integer);
+begin
+  if (Handle <> nil) and Assigned(ft_window_set_modal_result) then
+    ft_window_set_modal_result(Handle, AValue);
 end;
 
 procedure TFtWindow.BringToFront();
