@@ -115,7 +115,7 @@ const
     '      }' + LineEnding +
     '    }' + LineEnding +
     LineEnding +
-    '    TextInput {' + LineEnding +
+    '    UrlEntry {' + LineEnding +
     '      id: omniBox;' + LineEnding +
     '      anchors.left: parent.left;' + LineEnding +
     '      anchors.leftMargin: 148;' + LineEnding +
@@ -123,7 +123,14 @@ const
     '      anchors.rightMargin: 180;' + LineEnding +
     '      anchors.verticalCenter: parent.verticalCenter;' + LineEnding +
     '      height: 34;' + LineEnding +
-    '      text: mainWindow.currentUrl;' + LineEnding +
+    '      url: mainWindow.currentUrl;' + LineEnding +
+    '      cornerRadius: 17;' + LineEnding +
+    '      showSecurityChip: true;' + LineEnding +
+    '      showBookmarkButton: true;' + LineEnding +
+    '      securityState: mainWindow.activeTabIndex == 0 ? 0 : (mainWindow.activeTabIndex == 1 ? 0 : 2);' + LineEnding +
+    '      onSubmitted: {' + LineEnding +
+    '        mainWindow.currentUrl = omniBox.url;' + LineEnding +
+    '      }' + LineEnding +
     '    }' + LineEnding +
     LineEnding +
     '    Button {' + LineEnding +

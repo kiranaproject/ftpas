@@ -73,6 +73,9 @@ type
     procedure HandleTextAreaChange(Sender: TFtWidget; const AText: string);
     procedure HandleRadioChange(Sender: TFtRadioButton; AChecked: Boolean);
     procedure HandleMenuItemClick(Sender: TFtMenuItem);
+    procedure HandleUrlSubmit(Sender: TFtUrlEntry; const Url: string);
+    procedure HandleUrlSecurityClick(Sender: TFtUrlEntry; SecurityState: TFtUrlSecurityState);
+    procedure HandleUrlBookmarkClick(Sender: TFtUrlEntry; Bookmarked: Boolean);
   end;
 
   { TFtFTMLHost — Container widget hosting an FTML component hierarchy }
@@ -271,6 +274,34 @@ begin
     FHost.EmitItemSignal(FItem, 'clicked');
 end;
 
+procedure TFtFTMLSignalBridge.HandleUrlSubmit(Sender: TFtUrlEntry; const Url: string);
+begin
+  if (FHost <> nil) and (FItem <> nil) and not FHost.FIsSyncing then
+  begin
+    FItem.SetProperty('url', JSMakeString(Url));
+    FItem.SetProperty('text', JSMakeString(Url));
+    FHost.EmitItemSignal(FItem, 'submitted');
+    FHost.SyncProperties();
+  end;
+end;
+
+procedure TFtFTMLSignalBridge.HandleUrlSecurityClick(Sender: TFtUrlEntry; SecurityState: TFtUrlSecurityState);
+begin
+  if (FHost <> nil) and (FItem <> nil) and not FHost.FIsSyncing then
+  begin
+    FHost.EmitItemSignal(FItem, 'securityClicked');
+  end;
+end;
+
+procedure TFtFTMLSignalBridge.HandleUrlBookmarkClick(Sender: TFtUrlEntry; Bookmarked: Boolean);
+begin
+  if (FHost <> nil) and (FItem <> nil) and not FHost.FIsSyncing then
+  begin
+    FItem.SetProperty('bookmarked', JSMakeBoolean(Bookmarked));
+    FHost.EmitItemSignal(FItem, 'bookmarkClicked');
+  end;
+end;
+
 { TFtFTMLHost }
 
 constructor TFtFTMLHost.Create(AParent: TFtWidget; AX, AY, AW, AH: Integer);
@@ -432,6 +463,12 @@ begin
   else if AWidget is TFtSlider then
   begin
     TFtSlider(AWidget).OnChange := @bridge.HandleSliderChange;
+  end
+  else if AWidget is TFtUrlEntry then
+  begin
+    TFtUrlEntry(AWidget).OnSubmit := @bridge.HandleUrlSubmit;
+    TFtUrlEntry(AWidget).OnSecurityClick := @bridge.HandleUrlSecurityClick;
+    TFtUrlEntry(AWidget).OnBookmarkClick := @bridge.HandleUrlBookmarkClick;
   end;
 end;
 
@@ -707,6 +744,32 @@ begin
     ph := AItem.GetPropertyAsString('placeholder', '');
     if ph <> '' then
       TFtEntry(W).Placeholder := ph;
+    AttachSignals(AItem, W);
+  end
+  else if (AItem.TypeName = 'UrlEntry') or (AItem.TypeName = 'OmniBox') then
+  begin
+    if iw <= 0 then
+    begin
+      if (AParentWidget <> nil) and (AParentWidget.Width > ix + 16) then
+        iw := AParentWidget.Width - ix - 16
+      else
+        iw := 300;
+    end;
+    if ih <= 0 then
+      ih := 36;
+
+    txt := AItem.GetPropertyAsString('url', AItem.GetPropertyAsString('text', ''));
+    W := TFtUrlEntry.Create(AParentWidget, ix, iy, iw, ih, txt);
+    rad := AItem.GetPropertyAsNumber('radius', AItem.GetPropertyAsNumber('cornerRadius', 0.0));
+    if rad > 0.0 then
+      TFtUrlEntry(W).CornerRadius := rad;
+    TFtUrlEntry(W).ShowSecurityChip := AItem.GetPropertyAsBoolean('showSecurityChip', True);
+    TFtUrlEntry(W).ShowBookmarkButton := AItem.GetPropertyAsBoolean('showBookmarkButton', True);
+    TFtUrlEntry(W).ShowSecurityBadgeText := AItem.GetPropertyAsBoolean('showSecurityBadgeText', False);
+    curVal := AItem.GetPropertyAsNumber('securityState', -1.0);
+    if curVal >= 0.0 then
+      TFtUrlEntry(W).SecurityState := TFtUrlSecurityState(Round(curVal));
+    TFtUrlEntry(W).Bookmarked := AItem.GetPropertyAsBoolean('bookmarked', False);
     AttachSignals(AItem, W);
   end
   else if AItem.TypeName = 'Switch' then
@@ -1332,9 +1395,9 @@ begin
       end;
 
       // Corner radius sync
-      if W is TFtContainer then
+      if (W is TFtContainer) and not (W is TFtUrlEntry) then
       begin
-        curRad := item.GetPropertyAsNumber('radius', 0.0);
+        curRad := item.GetPropertyAsNumber('radius', item.GetPropertyAsNumber('cornerRadius', 0.0));
         if curRad <> FBindings[i].LastRadius then
         begin
           TFtContainer(W).CornerRadius := curRad;
@@ -1374,6 +1437,27 @@ begin
           TFtProgressBar(W).Value := curVal;
           FBindings[i].LastValue := curVal;
         end;
+      end
+      else if W is TFtUrlEntry then
+      begin
+        curText := item.GetPropertyAsString('url', item.GetPropertyAsString('text', ''));
+        if curText <> FBindings[i].LastText then
+        begin
+          TFtUrlEntry(W).Url := curText;
+          FBindings[i].LastText := curText;
+        end;
+        curRad := item.GetPropertyAsNumber('cornerRadius', item.GetPropertyAsNumber('radius', -1.0));
+        if (curRad >= 0.0) and (curRad <> FBindings[i].LastRadius) then
+        begin
+          TFtUrlEntry(W).CornerRadius := curRad;
+          FBindings[i].LastRadius := curRad;
+        end;
+        curVal := item.GetPropertyAsNumber('securityState', -1.0);
+        if curVal >= 0.0 then
+          TFtUrlEntry(W).SecurityState := TFtUrlSecurityState(Round(curVal));
+        curCheck := item.GetPropertyAsBoolean('bookmarked', False);
+        if curCheck <> TFtUrlEntry(W).Bookmarked then
+          TFtUrlEntry(W).Bookmarked := curCheck;
       end;
 
       // Child flex constraint sync

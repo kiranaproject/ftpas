@@ -107,6 +107,7 @@ type
     procedure TestFTMLDeclarativeVisibility();
     procedure TestFTMLNotebookProperties();
     procedure TestFTMLExtendedClientAreaDeclarative();
+    procedure TestFTMLUrlEntryDeclarative();
   end;
 
 { TLibraryLoadingTest }
@@ -1306,6 +1307,54 @@ begin
     w := win.FindWidget('headerBar');
     AssertNotNull('headerBar widget should exist', w);
     AssertEquals('Header bar X should update reactively from controlsInsetLeft', 85, w.X);
+  finally
+    win.Free();
+  end;
+end;
+
+procedure TFTMLIntegrationTest.TestFTMLUrlEntryDeclarative();
+var
+  win: TFtFTMLWindow;
+  w: TFtWidget;
+  urlEntry: TFtUrlEntry;
+const
+  SRC =
+    'Window {' + LineEnding +
+    '  id: mainWindow;' + LineEnding +
+    '  property string currentUrl: "https://floria.dev/overview";' + LineEnding +
+    '  property int secState: 0;' + LineEnding +
+    '  UrlEntry {' + LineEnding +
+    '    id: omniBox;' + LineEnding +
+    '    width: 500; height: 36;' + LineEnding +
+    '    url: mainWindow.currentUrl;' + LineEnding +
+    '    cornerRadius: 18;' + LineEnding +
+    '    showSecurityChip: true;' + LineEnding +
+    '    showBookmarkButton: true;' + LineEnding +
+    '    securityState: mainWindow.secState;' + LineEnding +
+    '  }' + LineEnding +
+    '}' + LineEnding;
+begin
+  win := TFtFTMLWindow.Create(600, 400, 'UrlEntry Test');
+  try
+    AssertNotNull('FTML root item should load', win.LoadString(SRC));
+    w := win.FindWidget('omniBox');
+    AssertNotNull('omniBox widget should exist', w);
+    AssertTrue('omniBox must be an instance of TFtUrlEntry', w is TFtUrlEntry);
+
+    urlEntry := TFtUrlEntry(w);
+    AssertEquals('Initial URL must match FTML binding', 'https://floria.dev/overview', urlEntry.Url);
+    AssertEquals('CornerRadius must be 18.0', 18.0, urlEntry.CornerRadius, 0.001);
+    AssertTrue('ShowSecurityChip must be true', urlEntry.ShowSecurityChip);
+    AssertTrue('ShowBookmarkButton must be true', urlEntry.ShowBookmarkButton);
+    AssertEquals('SecurityState must be ftussSecure (0)', Integer(ftussSecure), Integer(urlEntry.SecurityState));
+
+    // Reactive update from JavaScript / FTML property
+    win.Evaluate('mainWindow.currentUrl = "https://floria.dev/updated-url";');
+    win.Evaluate('mainWindow.secState = 1;');
+    win.SyncProperties();
+
+    AssertEquals('Reactive URL must update in TFtUrlEntry', 'https://floria.dev/updated-url', urlEntry.Url);
+    AssertEquals('Reactive SecurityState must update to ftussInsecure (1)', Integer(ftussInsecure), Integer(urlEntry.SecurityState));
   finally
     win.Free();
   end;
