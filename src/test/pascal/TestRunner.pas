@@ -51,6 +51,7 @@ type
   TWidgetAndControlsTest = class(TTestCase)
   published
     procedure TestWindowCreation();
+    procedure TestWindowExtendedClientArea();
     procedure TestButtonProperties();
     procedure TestLabelAndEntry();
     procedure TestSwitchAndCheckBox();
@@ -105,6 +106,7 @@ type
     procedure TestFTMLEmbedderModule();
     procedure TestFTMLDeclarativeVisibility();
     procedure TestFTMLNotebookProperties();
+    procedure TestFTMLExtendedClientAreaDeclarative();
   end;
 
 { TLibraryLoadingTest }
@@ -121,6 +123,9 @@ begin
   AssertTrue('ft_init must be assigned', Assigned(ft_init));
   AssertTrue('ft_quit must be assigned', Assigned(ft_quit));
   AssertTrue('ft_window_create must be assigned', Assigned(ft_window_create));
+  AssertTrue('ft_window_set_extended_client_area must be assigned', Assigned(ft_window_set_extended_client_area));
+  AssertTrue('ft_window_get_controls_inset must be assigned', Assigned(ft_window_get_controls_inset));
+  AssertTrue('ft_window_begin_move must be assigned', Assigned(ft_window_begin_move));
   AssertTrue('ft_button_create must be assigned', Assigned(ft_button_create));
   AssertTrue('ft_bitmap_create must be assigned', Assigned(ft_bitmap_create));
 end;
@@ -262,6 +267,28 @@ begin
     AssertEquals('Window height should be 240', 240, win.Height);
     win.Title := 'Updated Title';
     AssertEquals('Window title should update', 'Updated Title', win.Title);
+  finally
+    win.Free();
+  end;
+end;
+
+procedure TWidgetAndControlsTest.TestWindowExtendedClientArea();
+var
+  win: TFtWindow;
+  ins: TFtWindowControlsInset;
+begin
+  win := TFtWindow.Create(400, 300, 'ECA Test Window');
+  try
+    AssertFalse('Default ExtendedClientArea must be false', win.ExtendedClientArea);
+    win.ExtendedClientArea := True;
+    AssertTrue('ExtendedClientArea must be true after assignment', win.ExtendedClientArea);
+    ins := win.WindowControlsInset;
+    AssertEquals('Initial Inset.Left should be 0', 0, ins.Left);
+    AssertEquals('Initial Inset.Right should be 0', 0, ins.Right);
+    AssertEquals('Initial Inset.Top should be 0', 0, ins.Top);
+    AssertEquals('Initial Inset.Bottom should be 0', 0, ins.Bottom);
+    win.ExtendedClientArea := False;
+    AssertFalse('ExtendedClientArea must revert to false', win.ExtendedClientArea);
   finally
     win.Free();
   end;
@@ -1229,6 +1256,56 @@ begin
     AssertEquals('MinTabWidth parsed from FTML', 80.0, nb.MinTabWidth);
     AssertEquals('TabHeight parsed from FTML', 36.0, nb.TabHeight);
     AssertEquals('PageCount is 2', 2, nb.PageCount);
+  finally
+    win.Free();
+  end;
+end;
+
+type
+  TTestECAWindow = class(TFtFTMLWindow)
+  public
+    procedure TriggerControlsInset(const AInset: TFtWindowControlsInset);
+  end;
+
+procedure TTestECAWindow.TriggerControlsInset(const AInset: TFtWindowControlsInset);
+begin
+  DoControlsInsetChanged(AInset);
+end;
+
+procedure TFTMLIntegrationTest.TestFTMLExtendedClientAreaDeclarative();
+var
+  win: TTestECAWindow;
+  w: TFtWidget;
+const
+  SRC =
+    'Window {' + LineEnding +
+    '  id: mainWindow;' + LineEnding +
+    '  title: "Declarative ECA Browser";' + LineEnding +
+    '  extendedClientArea: true;' + LineEnding +
+    '  Rectangle {' + LineEnding +
+    '    id: headerBar;' + LineEnding +
+    '    x: mainWindow.controlsInsetLeft;' + LineEnding +
+    '    y: 0; width: 400; height: 34;' + LineEnding +
+    '  }' + LineEnding +
+    '}' + LineEnding;
+begin
+  win := TTestECAWindow.Create(600, 400, 'Original Title');
+  try
+    AssertFalse('Default ECA is false', win.ExtendedClientArea);
+    AssertNotNull('FTML root item should load', win.LoadString(SRC));
+    AssertTrue('Window ECA must be activated by FTML declaration', win.ExtendedClientArea);
+    AssertEquals('Window title must be updated from FTML declaration', 'Declarative ECA Browser', win.Title);
+
+    // Simulate inset update from window manager
+    win.TriggerControlsInset(FtControlsInset(85, 0, 34, 0));
+    AssertEquals('WindowControlsInset.Left should be 85', 85, win.WindowControlsInset.Left);
+    AssertEquals('WindowControlsInset.Top should be 34', 34, win.WindowControlsInset.Top);
+
+    // Verify reactive property update on root item
+    AssertEquals('FTML rootItem.controlsInsetLeft should reactively be 85', 85.0, win.RootItem.GetPropertyAsNumber('controlsInsetLeft', 0.0), 0.001);
+    w := win.FindWidget('headerBar');
+    AssertNotNull('headerBar widget should exist', w);
+    AssertEquals('Header bar X should update reactively from controlsInsetLeft', 85, w.X);
   finally
     win.Free();
   end;

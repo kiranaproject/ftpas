@@ -293,6 +293,7 @@ type
   TFtWindowKeyCallback           = procedure(window: TFtWidget; key: cuint32; is_down: cint32; user_data: Pointer); cdecl;
   TFtWindowResizeCallback        = procedure(window: TFtWidget; new_width, new_height: cint32; user_data: Pointer); cdecl;
   TFtWindowCloseCallback         = function(window: TFtWidget; user_data: Pointer): cint32; cdecl;
+  TFtWindowControlsInsetCallback = procedure(window: TFtWidget; left, right, top, bottom: cint32; user_data: Pointer); cdecl;
   TFtDestroyCallback             = procedure(widget: TFtWidget; user_data: Pointer); cdecl;
   TFtEventFilterFunc             = function(event: Pointer): cint32; cdecl;
   TFtTickCallback                = procedure(user_data: Pointer); cdecl;
@@ -321,6 +322,12 @@ var
   ft_window_get_background_opacity: function(window: TFtWidget): Double; cdecl;
   ft_window_set_background_blur: procedure(window: TFtWidget; blur: cint32); cdecl;
   ft_window_get_background_blur: function(window: TFtWidget): cint32; cdecl;
+  ft_window_set_extended_client_area: procedure(window: TFtWidget; eca: cint32); cdecl;
+  ft_window_get_extended_client_area: function(window: TFtWidget): cint32; cdecl;
+  ft_window_get_controls_inset: procedure(window: TFtWidget; left, right, top, bottom: pcint32); cdecl;
+  ft_window_on_controls_inset_changed: procedure(window: TFtWidget; callback: TFtWindowControlsInsetCallback; user_data: Pointer); cdecl;
+  ft_window_begin_move: procedure(window: TFtWidget; root_x, root_y: cint32); cdecl;
+  ft_window_begin_resize: procedure(window: TFtWidget; root_x, root_y, direction: cint32); cdecl;
   ft_window_set_strut_partial: procedure(window: TFtWidget; left, right, top, bottom, left_start_y, left_end_y, right_start_y, right_end_y, top_start_x, top_end_x, bottom_start_x, bottom_end_x: cint32); cdecl;
   ft_window_show_modal: function(window: TFtWidget): cint32; cdecl;
   ft_window_bring_to_front: procedure(window: TFtWidget); cdecl;
@@ -1228,6 +1235,12 @@ begin
   Pointer(ft_window_get_background_opacity) := BindFunc('ft_window_get_background_opacity');
   Pointer(ft_window_set_background_blur) := BindFunc('ft_window_set_background_blur');
   Pointer(ft_window_get_background_blur) := BindFunc('ft_window_get_background_blur');
+  Pointer(ft_window_set_extended_client_area) := BindFunc('ft_window_set_extended_client_area');
+  Pointer(ft_window_get_extended_client_area) := BindFunc('ft_window_get_extended_client_area');
+  Pointer(ft_window_get_controls_inset) := BindFunc('ft_window_get_controls_inset');
+  Pointer(ft_window_on_controls_inset_changed) := BindFunc('ft_window_on_controls_inset_changed');
+  Pointer(ft_window_begin_move) := BindFunc('ft_window_begin_move');
+  Pointer(ft_window_begin_resize) := BindFunc('ft_window_begin_resize');
   Pointer(ft_window_set_strut_partial) := BindFunc('ft_window_set_strut_partial');
   Pointer(ft_window_show_modal) := BindFunc('ft_window_show_modal');
   Pointer(ft_window_bring_to_front) := BindFunc('ft_window_bring_to_front');

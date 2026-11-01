@@ -238,6 +238,15 @@ type
     Left, Top, Width, Height: Integer;
   end;
 
+  TFtWindowControlsInset = record
+    Left   : Integer;
+    Right  : Integer;
+    Top    : Integer;
+    Bottom : Integer;
+  end;
+
+  TFtWindowControlsInsetChangedEvent = procedure(Sender: TObject; const AInset: TFtWindowControlsInset) of object;
+
   TFtColor = record
     R, G, B, A: Double;
   end;
@@ -246,6 +255,7 @@ type
 function FtColor(R, G, B: Double; A: Double = 1.0): TFtColor;
 function FtColorHex(const AHex: string): TFtColor;
 function FtRect(ALeft, ATop, AWidth, AHeight: Integer): TFtRect;
+function FtControlsInset(ALeft, ARight, ATop, ABottom: Integer): TFtWindowControlsInset;
 
 implementation
 
@@ -297,6 +307,14 @@ begin
   Result.Top := ATop;
   Result.Width := AWidth;
   Result.Height := AHeight;
+end;
+
+function FtControlsInset(ALeft, ARight, ATop, ABottom: Integer): TFtWindowControlsInset;
+begin
+  Result.Left := ALeft;
+  Result.Right := ARight;
+  Result.Top := ATop;
+  Result.Bottom := ABottom;
 end;
 
 end.

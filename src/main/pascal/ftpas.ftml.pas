@@ -89,6 +89,7 @@ type
     FIsSyncing: Boolean;
     FLastError: string;
     FOnWidgetCreated: TFtFTMLWidgetCreatedEvent;
+    FAncestorWindow: TFtWindow;
 
     procedure AddMenuItemBinding(AItem: TFloriaFTMLItem; AMenuItem: TFtMenuItem);
     procedure DoWidgetCreated(AItem: TFloriaFTMLItem; AWidget: TFtWidget);
@@ -98,6 +99,14 @@ type
     function  BuildWidgetTree(AItem: TFloriaFTMLItem; AParentWidget: TFtWidget): TFtWidget;
     procedure AttachSignals(AItem: TFloriaFTMLItem; AWidget: TFtWidget);
     function  GetHasErrors(): Boolean;
+
+    procedure HookAncestorWindow();
+    procedure UnhookAncestorWindow();
+    procedure HandleAncestorControlsInsetChanged(Sender: TObject; const AInset: TFtWindowControlsInset);
+    function  JSBeginWindowMove(const AArgs: array of TFloriaJSValue; AThis: TFloriaJSValue): TFloriaJSValue;
+    function  JSBeginWindowResize(const AArgs: array of TFloriaJSValue; AThis: TFloriaJSValue): TFloriaJSValue;
+    function  JSSetExtendedClientArea(const AArgs: array of TFloriaJSValue; AThis: TFloriaJSValue): TFloriaJSValue;
+    function  JSIsExtendedClientArea(const AArgs: array of TFloriaJSValue; AThis: TFloriaJSValue): TFloriaJSValue;
   public
     constructor Create(AParent: TFtWidget; AX, AY, AW, AH: Integer); reintroduce;
     destructor Destroy(); override;
@@ -112,6 +121,7 @@ type
 
     procedure SyncProperties();
     procedure EmitItemSignal(AItem: TFloriaFTMLItem; const ASignalName: string);
+    procedure NotifyControlsInsetChanged(const AInset: TFtWindowControlsInset);
 
     property Engine: TFloriaFTMLEngine read FEngine;
     property RootItem: TFloriaFTMLItem read FRootItem;
@@ -130,6 +140,7 @@ type
     function  GetRootItem(): TFloriaFTMLItem;
   protected
     procedure DoResize(ANewWidth, ANewHeight: Integer); override;
+    procedure DoControlsInsetChanged(const AInset: TFtWindowControlsInset); override;
   public
     constructor Create(AWidth, AHeight: Integer; const ATitle: string = ''); reintroduce;
     destructor Destroy(); override;
@@ -278,10 +289,20 @@ begin
   FBridges := TFPList.Create();
   FIsSyncing := False;
   FLastError := '';
+  FAncestorWindow := nil;
+  if FEngine.JSContext <> nil then
+  begin
+    FEngine.JSContext.RegisterMethod('beginWindowMove', @JSBeginWindowMove);
+    FEngine.JSContext.RegisterMethod('beginWindowResize', @JSBeginWindowResize);
+    FEngine.JSContext.RegisterMethod('setExtendedClientArea', @JSSetExtendedClientArea);
+    FEngine.JSContext.RegisterMethod('isExtendedClientArea', @JSIsExtendedClientArea);
+  end;
+  HookAncestorWindow();
 end;
 
 destructor TFtFTMLHost.Destroy();
 begin
+  UnhookAncestorWindow();
   ClearBindings();
   FreeAndNil(FBridges);
   FreeAndNil(FEngine);
@@ -489,7 +510,7 @@ begin
   W := nil;
   childrenHandled := False;
 
-  if (AItem = FRootItem) and ((AItem.TypeName = 'Rectangle') or (AItem.TypeName = 'Container') or (AItem.TypeName = 'Item')) then
+  if (AItem = FRootItem) and ((AItem.TypeName = 'Rectangle') or (AItem.TypeName = 'Container') or (AItem.TypeName = 'Item') or (AItem.TypeName = 'Window')) then
   begin
     W := Self;
     rad := AItem.GetPropertyAsNumber('radius', 0.0);
@@ -504,6 +525,25 @@ begin
         Self.Style := 'background-color: ' + colorStr + '; border: 1px solid ' + borderCol + ';'
       else
         Self.Style := 'background-color: ' + colorStr + ';';
+    end;
+
+    win := FindAncestorWindow(Self);
+    if win <> nil then
+    begin
+      titleStr := AItem.GetPropertyAsString('title', '');
+      if titleStr <> '' then
+        win.Title := titleStr;
+
+      if AItem.HasProperty('extendedClientArea') or AItem.HasProperty('extended_client_area') then
+      begin
+        win.ExtendedClientArea := AItem.GetPropertyAsBoolean('extendedClientArea', False) or
+                                  AItem.GetPropertyAsBoolean('extended_client_area', False);
+        AItem.SetProperty('controlsInsetLeft', JSMakeNumber(win.WindowControlsInset.Left));
+        AItem.SetProperty('controlsInsetRight', JSMakeNumber(win.WindowControlsInset.Right));
+        AItem.SetProperty('controlsInsetTop', JSMakeNumber(win.WindowControlsInset.Top));
+        AItem.SetProperty('controlsInsetBottom', JSMakeNumber(win.WindowControlsInset.Bottom));
+        AItem.SetProperty('extendedClientArea', JSMakeBoolean(win.ExtendedClientArea));
+      end;
     end;
   end
   else if (AItem = FRootItem) and ((AItem.TypeName = 'Panel') or (AItem.TypeName = 'Card')) then
@@ -524,6 +564,25 @@ begin
         Self.Style := 'background-color: ' + colorStr + '; border: 1px solid ' + borderCol + ';'
       else
         Self.Style := 'background-color: ' + colorStr + ';';
+    end;
+
+    win := FindAncestorWindow(Self);
+    if win <> nil then
+    begin
+      titleStr := AItem.GetPropertyAsString('title', '');
+      if titleStr <> '' then
+        win.Title := titleStr;
+
+      if AItem.HasProperty('extendedClientArea') or AItem.HasProperty('extended_client_area') then
+      begin
+        win.ExtendedClientArea := AItem.GetPropertyAsBoolean('extendedClientArea', False) or
+                                  AItem.GetPropertyAsBoolean('extended_client_area', False);
+        AItem.SetProperty('controlsInsetLeft', JSMakeNumber(win.WindowControlsInset.Left));
+        AItem.SetProperty('controlsInsetRight', JSMakeNumber(win.WindowControlsInset.Right));
+        AItem.SetProperty('controlsInsetTop', JSMakeNumber(win.WindowControlsInset.Top));
+        AItem.SetProperty('controlsInsetBottom', JSMakeNumber(win.WindowControlsInset.Bottom));
+        AItem.SetProperty('extendedClientArea', JSMakeBoolean(win.ExtendedClientArea));
+      end;
     end;
   end
   else if (AItem.TypeName = 'Container') or (AItem.TypeName = 'Item') then
@@ -1065,6 +1124,8 @@ begin
 end;
 
 function TFtFTMLHost.LoadString(const ASource: string): TFloriaFTMLItem;
+var
+  win: TFtWindow;
 begin
   ClearBindings();
 
@@ -1073,6 +1134,42 @@ begin
   begin
     FLastError := FEngine.LastError;
     Exit(nil);
+  end;
+
+  HookAncestorWindow();
+  win := FindAncestorWindow(Self);
+  if win <> nil then
+  begin
+    if FRootItem.HasProperty('extendedClientArea') or FRootItem.HasProperty('extended_client_area') then
+    begin
+      if FRootItem.GetPropertyAsBoolean('extendedClientArea', False) or
+         FRootItem.GetPropertyAsBoolean('extended_client_area', False) then
+        win.ExtendedClientArea := True;
+    end
+    else
+      FRootItem.SetProperty('extendedClientArea', JSMakeBoolean(win.ExtendedClientArea));
+
+    if not FRootItem.HasProperty('controlsInsetLeft') then
+      FRootItem.SetProperty('controlsInsetLeft', JSMakeNumber(win.WindowControlsInset.Left));
+    if not FRootItem.HasProperty('controlsInsetRight') then
+      FRootItem.SetProperty('controlsInsetRight', JSMakeNumber(win.WindowControlsInset.Right));
+    if not FRootItem.HasProperty('controlsInsetTop') then
+      FRootItem.SetProperty('controlsInsetTop', JSMakeNumber(win.WindowControlsInset.Top));
+    if not FRootItem.HasProperty('controlsInsetBottom') then
+      FRootItem.SetProperty('controlsInsetBottom', JSMakeNumber(win.WindowControlsInset.Bottom));
+  end
+  else
+  begin
+    if not FRootItem.HasProperty('extendedClientArea') then
+      FRootItem.SetProperty('extendedClientArea', JSMakeBoolean(False));
+    if not FRootItem.HasProperty('controlsInsetLeft') then
+      FRootItem.SetProperty('controlsInsetLeft', JSMakeNumber(0));
+    if not FRootItem.HasProperty('controlsInsetRight') then
+      FRootItem.SetProperty('controlsInsetRight', JSMakeNumber(0));
+    if not FRootItem.HasProperty('controlsInsetTop') then
+      FRootItem.SetProperty('controlsInsetTop', JSMakeNumber(0));
+    if not FRootItem.HasProperty('controlsInsetBottom') then
+      FRootItem.SetProperty('controlsInsetBottom', JSMakeNumber(0));
   end;
 
   if (Width > 0) and (Height > 0) then
@@ -1087,6 +1184,8 @@ begin
 end;
 
 function TFtFTMLHost.LoadFile(const AFileName: string): TFloriaFTMLItem;
+var
+  win: TFtWindow;
 begin
   ClearBindings();
 
@@ -1095,6 +1194,42 @@ begin
   begin
     FLastError := FEngine.LastError;
     Exit(nil);
+  end;
+
+  HookAncestorWindow();
+  win := FindAncestorWindow(Self);
+  if win <> nil then
+  begin
+    if FRootItem.HasProperty('extendedClientArea') or FRootItem.HasProperty('extended_client_area') then
+    begin
+      if FRootItem.GetPropertyAsBoolean('extendedClientArea', False) or
+         FRootItem.GetPropertyAsBoolean('extended_client_area', False) then
+        win.ExtendedClientArea := True;
+    end
+    else
+      FRootItem.SetProperty('extendedClientArea', JSMakeBoolean(win.ExtendedClientArea));
+
+    if not FRootItem.HasProperty('controlsInsetLeft') then
+      FRootItem.SetProperty('controlsInsetLeft', JSMakeNumber(win.WindowControlsInset.Left));
+    if not FRootItem.HasProperty('controlsInsetRight') then
+      FRootItem.SetProperty('controlsInsetRight', JSMakeNumber(win.WindowControlsInset.Right));
+    if not FRootItem.HasProperty('controlsInsetTop') then
+      FRootItem.SetProperty('controlsInsetTop', JSMakeNumber(win.WindowControlsInset.Top));
+    if not FRootItem.HasProperty('controlsInsetBottom') then
+      FRootItem.SetProperty('controlsInsetBottom', JSMakeNumber(win.WindowControlsInset.Bottom));
+  end
+  else
+  begin
+    if not FRootItem.HasProperty('extendedClientArea') then
+      FRootItem.SetProperty('extendedClientArea', JSMakeBoolean(False));
+    if not FRootItem.HasProperty('controlsInsetLeft') then
+      FRootItem.SetProperty('controlsInsetLeft', JSMakeNumber(0));
+    if not FRootItem.HasProperty('controlsInsetRight') then
+      FRootItem.SetProperty('controlsInsetRight', JSMakeNumber(0));
+    if not FRootItem.HasProperty('controlsInsetTop') then
+      FRootItem.SetProperty('controlsInsetTop', JSMakeNumber(0));
+    if not FRootItem.HasProperty('controlsInsetBottom') then
+      FRootItem.SetProperty('controlsInsetBottom', JSMakeNumber(0));
   end;
 
   if (Width > 0) and (Height > 0) then
@@ -1330,6 +1465,118 @@ begin
   Result := (FLastError <> '') or (FEngine.HasErrors());
 end;
 
+procedure TFtFTMLHost.HookAncestorWindow();
+var
+  win: TFtWindow;
+begin
+  win := FindAncestorWindow(Self);
+  if (win <> nil) and (win <> FAncestorWindow) then
+  begin
+    UnhookAncestorWindow();
+    FAncestorWindow := win;
+    if not (FAncestorWindow is TFtFTMLWindow) then
+    begin
+      if not Assigned(FAncestorWindow.OnControlsInsetChanged) then
+        FAncestorWindow.OnControlsInsetChanged := @HandleAncestorControlsInsetChanged;
+    end;
+  end;
+end;
+
+procedure TFtFTMLHost.UnhookAncestorWindow();
+begin
+  if (FAncestorWindow <> nil) and not (FAncestorWindow is TFtFTMLWindow) then
+  begin
+    if FAncestorWindow.OnControlsInsetChanged = @HandleAncestorControlsInsetChanged then
+      FAncestorWindow.OnControlsInsetChanged := nil;
+  end;
+  FAncestorWindow := nil;
+end;
+
+procedure TFtFTMLHost.HandleAncestorControlsInsetChanged(Sender: TObject; const AInset: TFtWindowControlsInset);
+begin
+  NotifyControlsInsetChanged(AInset);
+end;
+
+procedure TFtFTMLHost.NotifyControlsInsetChanged(const AInset: TFtWindowControlsInset);
+begin
+  if FRootItem <> nil then
+  begin
+    FRootItem.SetProperty('controlsInsetLeft', JSMakeNumber(AInset.Left));
+    FRootItem.SetProperty('controlsInsetRight', JSMakeNumber(AInset.Right));
+    FRootItem.SetProperty('controlsInsetTop', JSMakeNumber(AInset.Top));
+    FRootItem.SetProperty('controlsInsetBottom', JSMakeNumber(AInset.Bottom));
+    FRootItem.SetProperty('extendedClientArea', JSMakeBoolean(True));
+    SyncProperties();
+  end;
+end;
+
+function TFtFTMLHost.JSBeginWindowMove(const AArgs: array of TFloriaJSValue; AThis: TFloriaJSValue): TFloriaJSValue;
+var
+  win: TFtWindow;
+  rx, ry: Integer;
+begin
+  win := FindAncestorWindow(Self);
+  if win <> nil then
+  begin
+    rx := 0; ry := 0;
+    if Length(AArgs) >= 1 then rx := Round(AArgs[0].ToNumber());
+    if Length(AArgs) >= 2 then ry := Round(AArgs[1].ToNumber());
+    win.BeginWindowMove(rx, ry);
+  end;
+  Result := JSMakeUndefined();
+end;
+
+function TFtFTMLHost.JSBeginWindowResize(const AArgs: array of TFloriaJSValue; AThis: TFloriaJSValue): TFloriaJSValue;
+var
+  win: TFtWindow;
+  rx, ry, dir: Integer;
+begin
+  win := FindAncestorWindow(Self);
+  if win <> nil then
+  begin
+    rx := 0; ry := 0; dir := 0;
+    if Length(AArgs) >= 1 then rx := Round(AArgs[0].ToNumber());
+    if Length(AArgs) >= 2 then ry := Round(AArgs[1].ToNumber());
+    if Length(AArgs) >= 3 then dir := Round(AArgs[2].ToNumber());
+    win.BeginWindowResize(rx, ry, dir);
+  end;
+  Result := JSMakeUndefined();
+end;
+
+function TFtFTMLHost.JSSetExtendedClientArea(const AArgs: array of TFloriaJSValue; AThis: TFloriaJSValue): TFloriaJSValue;
+var
+  win: TFtWindow;
+  enable: Boolean;
+begin
+  win := FindAncestorWindow(Self);
+  if win <> nil then
+  begin
+    enable := True;
+    if Length(AArgs) >= 1 then enable := AArgs[0].ToBoolean();
+    win.ExtendedClientArea := enable;
+    if FRootItem <> nil then
+    begin
+      FRootItem.SetProperty('extendedClientArea', JSMakeBoolean(enable));
+      FRootItem.SetProperty('controlsInsetLeft', JSMakeNumber(win.WindowControlsInset.Left));
+      FRootItem.SetProperty('controlsInsetRight', JSMakeNumber(win.WindowControlsInset.Right));
+      FRootItem.SetProperty('controlsInsetTop', JSMakeNumber(win.WindowControlsInset.Top));
+      FRootItem.SetProperty('controlsInsetBottom', JSMakeNumber(win.WindowControlsInset.Bottom));
+    end;
+  end;
+  Result := JSMakeUndefined();
+end;
+
+function TFtFTMLHost.JSIsExtendedClientArea(const AArgs: array of TFloriaJSValue; AThis: TFloriaJSValue): TFloriaJSValue;
+var
+  win: TFtWindow;
+begin
+  win := FindAncestorWindow(Self);
+  if win <> nil then
+    Result := JSMakeBoolean(win.ExtendedClientArea)
+  else
+    Result := JSMakeBoolean(False);
+end;
+
 { TFtFTMLWindow }
 
 constructor TFtFTMLWindow.Create(AWidth, AHeight: Integer; const ATitle: string);
@@ -1366,6 +1613,13 @@ begin
     end;
     FHost.SyncProperties();
   end;
+end;
+
+procedure TFtFTMLWindow.DoControlsInsetChanged(const AInset: TFtWindowControlsInset);
+begin
+  inherited DoControlsInsetChanged(AInset);
+  if FHost <> nil then
+    FHost.NotifyControlsInsetChanged(AInset);
 end;
 
 procedure TFtFTMLWindow.SetBounds(AX, AY, AWidth, AHeight: Integer);

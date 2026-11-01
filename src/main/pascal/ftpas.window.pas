@@ -43,11 +43,17 @@ type
     FOnKey: TFtWindowKeyEvent;
     FOnGLDraw: TFtWindowGLDrawEvent;
     FOnClose: TFtWindowCloseEvent;
+    FExtendedClientArea: Boolean;
+    FWindowControlsInset: TFtWindowControlsInset;
+    FOnControlsInsetChanged: TFtWindowControlsInsetChangedEvent;
 
     function  GetTitle: string;
     procedure SetTitle(const AValue: string);
     function  GetBorderless: Boolean;
     procedure SetBorderless(AValue: Boolean);
+    function  GetExtendedClientArea: Boolean;
+    procedure SetExtendedClientArea(AValue: Boolean);
+    function  GetWindowControlsInset: TFtWindowControlsInset;
     function  GetSkipTaskbar: Boolean;
     procedure SetSkipTaskbar(AValue: Boolean);
     function  GetWindowType: TFtWindowType;
@@ -68,6 +74,7 @@ type
     procedure SetOnKey(AValue: TFtWindowKeyEvent);
     procedure SetOnGLDraw(AValue: TFtWindowGLDrawEvent);
     procedure SetOnClose(AValue: TFtWindowCloseEvent);
+    procedure SetOnControlsInsetChanged(AValue: TFtWindowControlsInsetChangedEvent);
   protected
     procedure DoResize(ANewWidth, ANewHeight: Integer); virtual;
     procedure DoMouseDown(AX, AY, AButton: Integer); virtual;
@@ -76,6 +83,7 @@ type
     procedure DoKey(AKey: LongWord; AIsDown: Boolean); virtual;
     procedure DoGLDraw(AWidth, AHeight: Integer); virtual;
     function  DoClose(): Boolean; virtual;
+    procedure DoControlsInsetChanged(const AInset: TFtWindowControlsInset); virtual;
   public
     constructor Create(); reintroduce; overload;
     constructor Create(AWidth, AHeight: Integer; const ATitle: string = ''); reintroduce; overload;
@@ -96,6 +104,9 @@ type
     function  MakeCurrent(): Boolean;
     procedure ReleaseCurrent();
 
+    procedure BeginWindowMove(const ARootX, ARootY: Integer);
+    procedure BeginWindowResize(const ARootX, ARootY: Integer; const ADirection: Integer);
+
     procedure SetStrutPartial(ALeft, ARight, ATop, ABottom,
                              ALeftStartY, ALeftEndY, ARightStartY, ARightEndY,
                              ATopStartX, ATopEndX, ABottomStartX, ABottomEndX: Integer);
@@ -103,6 +114,8 @@ type
     { Properties }
     property Title: string read GetTitle write SetTitle;
     property Borderless: Boolean read GetBorderless write SetBorderless;
+    property ExtendedClientArea: Boolean read GetExtendedClientArea write SetExtendedClientArea;
+    property WindowControlsInset: TFtWindowControlsInset read GetWindowControlsInset;
     property SkipTaskbar: Boolean read GetSkipTaskbar write SetSkipTaskbar;
     property WindowType: TFtWindowType read GetWindowType write SetWindowType;
     property BackgroundOpacity: Double read GetBackgroundOpacity write SetBackgroundOpacity;
@@ -119,6 +132,7 @@ type
     property OnKey: TFtWindowKeyEvent read FOnKey write SetOnKey;
     property OnGLDraw: TFtWindowGLDrawEvent read FOnGLDraw write SetOnGLDraw;
     property OnClose: TFtWindowCloseEvent read FOnClose write SetOnClose;
+    property OnControlsInsetChanged: TFtWindowControlsInsetChangedEvent read FOnControlsInsetChanged write SetOnControlsInsetChanged;
   end;
 
 implementation
@@ -174,6 +188,22 @@ begin
     TFtWindow(AUserData).DoGLDraw(AWidth, AHeight);
 end;
 
+procedure WindowControlsInsetDispatcher(AWindow: Pointer; ALeft, ARight, ATop, ABottom: cint32; AUserData: Pointer); cdecl;
+var
+  win: TFtWindow;
+  ins: TFtWindowControlsInset;
+begin
+  if AUserData <> nil then
+  begin
+    win := TFtWindow(AUserData);
+    ins.Left := ALeft;
+    ins.Right := ARight;
+    ins.Top := ATop;
+    ins.Bottom := ABottom;
+    win.DoControlsInsetChanged(ins);
+  end;
+end;
+
 { TFtWindow Implementation }
 
 constructor TFtWindow.Create();
@@ -187,6 +217,9 @@ var
 begin
   inherited Create(nil);
   FTitle := ATitle;
+  FExtendedClientArea := False;
+  FillChar(FWindowControlsInset, SizeOf(FWindowControlsInset), 0);
+  FOnControlsInsetChanged := nil;
   if Assigned(ft_window_create) then
     wHandle := ft_window_create(AWidth, AHeight, PChar(ATitle))
   else
@@ -197,6 +230,8 @@ begin
     ft_window_on_close(wHandle, @WindowCloseDispatcher, Pointer(Self));
   if (wHandle <> nil) and Assigned(ft_window_on_resize) then
     ft_window_on_resize(wHandle, @WindowResizeDispatcher, Pointer(Self));
+  if (wHandle <> nil) and Assigned(ft_window_on_controls_inset_changed) then
+    ft_window_on_controls_inset_changed(wHandle, @WindowControlsInsetDispatcher, Pointer(Self));
 end;
 
 constructor TFtWindow.CreateEGL(AWidth, AHeight: Integer; const ATitle: string = '');
@@ -205,6 +240,9 @@ var
 begin
   inherited Create(nil);
   FTitle := ATitle;
+  FExtendedClientArea := False;
+  FillChar(FWindowControlsInset, SizeOf(FWindowControlsInset), 0);
+  FOnControlsInsetChanged := nil;
   if Assigned(ft_egl_window_create) then
     wHandle := ft_egl_window_create(AWidth, AHeight, PChar(ATitle))
   else
@@ -215,6 +253,8 @@ begin
     ft_window_on_close(wHandle, @WindowCloseDispatcher, Pointer(Self));
   if (wHandle <> nil) and Assigned(ft_window_on_resize) then
     ft_window_on_resize(wHandle, @WindowResizeDispatcher, Pointer(Self));
+  if (wHandle <> nil) and Assigned(ft_window_on_controls_inset_changed) then
+    ft_window_on_controls_inset_changed(wHandle, @WindowControlsInsetDispatcher, Pointer(Self));
 end;
 
 procedure TFtWindow.Close();
@@ -516,12 +556,72 @@ begin
     ft_window_on_close(Handle, @WindowCloseDispatcher, Pointer(Self));
 end;
 
+procedure TFtWindow.SetOnControlsInsetChanged(AValue: TFtWindowControlsInsetChangedEvent);
+begin
+  FOnControlsInsetChanged := AValue;
+end;
+
 function TFtWindow.DoClose(): Boolean;
 begin
   if Assigned(FOnClose) then
     Result := FOnClose(Self)
   else
     Result := True;
+end;
+
+procedure TFtWindow.DoControlsInsetChanged(const AInset: TFtWindowControlsInset);
+begin
+  FWindowControlsInset := AInset;
+  if Assigned(FOnControlsInsetChanged) then
+    FOnControlsInsetChanged(Self, AInset);
+end;
+
+function TFtWindow.GetExtendedClientArea: Boolean;
+begin
+  if (Handle <> nil) and Assigned(ft_window_get_extended_client_area) then
+    Result := (ft_window_get_extended_client_area(Handle) <> 0)
+  else
+    Result := FExtendedClientArea;
+end;
+
+procedure TFtWindow.SetExtendedClientArea(AValue: Boolean);
+begin
+  FExtendedClientArea := AValue;
+  if (Handle <> nil) and Assigned(ft_window_set_extended_client_area) then
+    ft_window_set_extended_client_area(Handle, Ord(AValue));
+end;
+
+function TFtWindow.GetWindowControlsInset: TFtWindowControlsInset;
+var
+  l, r, t, b: cint32;
+begin
+  if (Handle <> nil) and Assigned(ft_window_get_controls_inset) then
+  begin
+    l := 0; r := 0; t := 0; b := 0;
+    ft_window_get_controls_inset(Handle, @l, @r, @t, @b);
+    if (l <> 0) or (r <> 0) or (t <> 0) or (b <> 0) or
+       ((FWindowControlsInset.Left = 0) and (FWindowControlsInset.Right = 0) and
+        (FWindowControlsInset.Top = 0) and (FWindowControlsInset.Bottom = 0)) then
+    begin
+      FWindowControlsInset.Left := l;
+      FWindowControlsInset.Right := r;
+      FWindowControlsInset.Top := t;
+      FWindowControlsInset.Bottom := b;
+    end;
+  end;
+  Result := FWindowControlsInset;
+end;
+
+procedure TFtWindow.BeginWindowMove(const ARootX, ARootY: Integer);
+begin
+  if (Handle <> nil) and Assigned(ft_window_begin_move) then
+    ft_window_begin_move(Handle, ARootX, ARootY);
+end;
+
+procedure TFtWindow.BeginWindowResize(const ARootX, ARootY: Integer; const ADirection: Integer);
+begin
+  if (Handle <> nil) and Assigned(ft_window_begin_resize) then
+    ft_window_begin_resize(Handle, ARootX, ARootY, ADirection);
 end;
 
 end.

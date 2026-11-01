@@ -39,6 +39,8 @@ uses
 type
   { Core Records & Enums }
   TFtRect                = ftpas.types.TFtRect;
+  TFtWindowControlsInset = ftpas.types.TFtWindowControlsInset;
+  TFtWindowControlsInsetChangedEvent = ftpas.types.TFtWindowControlsInsetChangedEvent;
   TFtColor               = ftpas.types.TFtColor;
   TFtButtonState         = ftpas.types.TFtButtonState;
   TFtCursorType          = ftpas.types.TFtCursorType;
@@ -157,6 +159,7 @@ function  FtApp(): TFtApp; inline;
 function  FtColor(R, G, B: Double; A: Double = 1.0): TFtColor; inline;
 function  FtColorHex(const AHex: string): TFtColor; inline;
 function  FtRect(AX, AY, AW, AH: Integer): TFtRect; inline;
+function  FtControlsInset(ALeft, ARight, ATop, ABottom: Integer): TFtWindowControlsInset; inline;
 function  FtPoint2D(AX, AY: Single): TFtPoint2D; inline;
 function  ReadComponentRes(const AResName: string; AForm: TFtFTMLForm): Boolean; inline; overload;
 function  ReadComponentRes(const AResName: string; out ASource: string): Boolean; inline; overload;
@@ -185,6 +188,11 @@ end;
 function FtRect(AX, AY, AW, AH: Integer): TFtRect;
 begin
   Result := ftpas.types.FtRect(AX, AY, AW, AH);
+end;
+
+function FtControlsInset(ALeft, ARight, ATop, ABottom: Integer): TFtWindowControlsInset;
+begin
+  Result := ftpas.types.FtControlsInset(ALeft, ARight, ATop, ABottom);
 end;
 
 function FtPoint2D(AX, AY: Single): TFtPoint2D;
