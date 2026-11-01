@@ -335,7 +335,7 @@ begin
   if AParent <> nil then pHandle := AParent.Handle else pHandle := nil;
   if (Self is TFtPanel) and Assigned(ft_panel_create) then
     h := ft_panel_create(pHandle, AX, AY, AW, AH)
-  else if (Self.ClassName = 'TFtTreeView') or (Self.ClassName = 'TFtTable') then
+  else if (Self.ClassName = 'TFtTreeView') or (Self.ClassName = 'TFtTable') or (Self.ClassName = 'TFtIconView') then
     h := nil
   else if Assigned(ft_container_create) then
     h := ft_container_create(pHandle, AX, AY, AW, AH)

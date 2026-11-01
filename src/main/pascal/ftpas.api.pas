@@ -217,6 +217,12 @@ const
   FT_CAP_SQUARE = 1;
   FT_CAP_ROUND  = 2;
 
+  { Icon View Zoom Levels }
+  FT_ICON_ZOOM_SMALL  = 0;
+  FT_ICON_ZOOM_NORMAL = 1;
+  FT_ICON_ZOOM_LARGE  = 2;
+  FT_ICON_ZOOM_HUGE   = 3;
+
 type
   { Handle Types }
   TFtWidget        = Pointer;
@@ -228,6 +234,7 @@ type
   TFtTreeView      = Pointer;
   TFtTreeNode      = Pointer;
   TFtTable         = Pointer;
+  TFtIconView      = Pointer;
   TFtFileDialog    = Pointer;
   TFtMessageDialog = Pointer;
   TFtCamera2D      = Pointer;
@@ -281,6 +288,9 @@ type
   TFtTableColumnClickCallback    = procedure(table: TFtTable; column_index: cint32; user_data: Pointer); cdecl;
   TFtTableDrawHeaderCallback     = function(table: TFtTable; canvas: Pointer; col_idx: cint32; x, y, w, h: Double; sort_order: cint32; user_data: Pointer): cint32; cdecl;
   TFtTableDrawCellCallback       = function(table: TFtTable; canvas: Pointer; row_idx, col_idx: cint32; x, y, w, h: Double; is_selected, is_hovered: cint32; user_data: Pointer): cint32; cdecl;
+  TFtIconSelectCallback          = procedure(sender: Pointer; item_index: cint32; user_data: Pointer); cdecl;
+  TFtIconActivateCallback        = procedure(sender: Pointer; item_index: cint32; user_data: Pointer); cdecl;
+  TFtIconContextMenuCallback     = procedure(sender: Pointer; item_index, screen_x, screen_y: cint32; user_data: Pointer); cdecl;
   TFtDrawingPaintCallback        = procedure(widget: TFtWidget; canvas: TFtCanvas; user_data: Pointer); cdecl;
   TFtDrawingMouseEvent           = procedure(widget: TFtWidget; x, y, button: cint32; user_data: Pointer); cdecl;
   TFtDrawingMouseMoveEvent       = procedure(widget: TFtWidget; x, y: cint32; user_data: Pointer); cdecl;
@@ -1005,6 +1015,50 @@ var
   ft_table_on_column_click: procedure(table: TFtTable; callback: TFtTableColumnClickCallback; user_data: Pointer); cdecl;
   ft_table_on_draw_header: procedure(table: TFtTable; callback: TFtTableDrawHeaderCallback; user_data: Pointer); cdecl;
   ft_table_on_draw_cell: procedure(table: TFtTable; callback: TFtTableDrawCellCallback; user_data: Pointer); cdecl;
+
+  { Icon View }
+  ft_icon_view_create: function(parent: TFtWidget; x, y, w, h: cint32): TFtIconView; cdecl;
+  ft_icon_view_add_item: function(icon_view: TFtIconView; caption: PChar; icon: TFtBitmap): cint32; cdecl;
+  ft_icon_view_insert_item: function(icon_view: TFtIconView; index: cint32; caption: PChar; icon: TFtBitmap): cint32; cdecl;
+  ft_icon_view_delete_item: procedure(icon_view: TFtIconView; index: cint32); cdecl;
+  ft_icon_view_clear: procedure(icon_view: TFtIconView); cdecl;
+  ft_icon_view_get_item_count: function(icon_view: TFtIconView): cint32; cdecl;
+  ft_icon_view_get_item_caption: function(icon_view: TFtIconView; index: cint32): PChar; cdecl;
+  ft_icon_view_set_item_caption: procedure(icon_view: TFtIconView; index: cint32; caption: PChar); cdecl;
+  ft_icon_view_get_item_subtext: function(icon_view: TFtIconView; index: cint32): PChar; cdecl;
+  ft_icon_view_set_item_subtext: procedure(icon_view: TFtIconView; index: cint32; subtext: PChar); cdecl;
+  ft_icon_view_get_item_icon: function(icon_view: TFtIconView; index: cint32): TFtBitmap; cdecl;
+  ft_icon_view_set_item_icon: procedure(icon_view: TFtIconView; index: cint32; icon: TFtBitmap); cdecl;
+  ft_icon_view_get_item_tag: function(icon_view: TFtIconView; index: cint32): cint32; cdecl;
+  ft_icon_view_set_item_tag: procedure(icon_view: TFtIconView; index, tag: cint32); cdecl;
+  ft_icon_view_get_item_data: function(icon_view: TFtIconView; index: cint32): Pointer; cdecl;
+  ft_icon_view_set_item_data: procedure(icon_view: TFtIconView; index: cint32; data: Pointer); cdecl;
+  ft_icon_view_get_selected_index: function(icon_view: TFtIconView): cint32; cdecl;
+  ft_icon_view_set_selected_index: procedure(icon_view: TFtIconView; index: cint32); cdecl;
+  ft_icon_view_get_multi_select: function(icon_view: TFtIconView): cint32; cdecl;
+  ft_icon_view_set_multi_select: procedure(icon_view: TFtIconView; enabled: cint32); cdecl;
+  ft_icon_view_is_item_selected: function(icon_view: TFtIconView; index: cint32): cint32; cdecl;
+  ft_icon_view_set_item_selected: procedure(icon_view: TFtIconView; index, selected: cint32); cdecl;
+  ft_icon_view_select_all: procedure(icon_view: TFtIconView); cdecl;
+  ft_icon_view_clear_selection: procedure(icon_view: TFtIconView); cdecl;
+  ft_icon_view_get_selected_count: function(icon_view: TFtIconView): cint32; cdecl;
+  ft_icon_view_get_selected_indices: function(icon_view: TFtIconView; out_indices: pcint32; max_count: cint32): cint32; cdecl;
+  ft_icon_view_get_zoom_level: function(icon_view: TFtIconView): cint32; cdecl;
+  ft_icon_view_set_zoom_level: procedure(icon_view: TFtIconView; level: cint32); cdecl;
+  ft_icon_view_get_icon_size: function(icon_view: TFtIconView): cint32; cdecl;
+  ft_icon_view_set_icon_size: procedure(icon_view: TFtIconView; size: cint32); cdecl;
+  ft_icon_view_get_item_width: function(icon_view: TFtIconView): Double; cdecl;
+  ft_icon_view_set_item_width: procedure(icon_view: TFtIconView; width: Double); cdecl;
+  ft_icon_view_get_item_height: function(icon_view: TFtIconView): Double; cdecl;
+  ft_icon_view_set_item_height: procedure(icon_view: TFtIconView; height: Double); cdecl;
+  ft_icon_view_get_spacing_x: function(icon_view: TFtIconView): Double; cdecl;
+  ft_icon_view_set_spacing_x: procedure(icon_view: TFtIconView; spacing: Double); cdecl;
+  ft_icon_view_get_spacing_y: function(icon_view: TFtIconView): Double; cdecl;
+  ft_icon_view_set_spacing_y: procedure(icon_view: TFtIconView; spacing: Double); cdecl;
+  ft_icon_view_scroll_into_view: procedure(icon_view: TFtIconView; index: cint32); cdecl;
+  ft_icon_view_on_select_item: procedure(icon_view: TFtIconView; callback: TFtIconSelectCallback; user_data: Pointer); cdecl;
+  ft_icon_view_on_item_activate: procedure(icon_view: TFtIconView; callback: TFtIconActivateCallback; user_data: Pointer); cdecl;
+  ft_icon_view_on_context_menu: procedure(icon_view: TFtIconView; callback: TFtIconContextMenuCallback; user_data: Pointer); cdecl;
 
   { File Dialogs }
   ft_file_dialog_create: function(dialog_type: cint32): TFtFileDialog; cdecl;
@@ -1913,6 +1967,50 @@ begin
   Pointer(ft_table_on_column_click) := BindFunc('ft_table_on_column_click');
   Pointer(ft_table_on_draw_header) := BindFunc('ft_table_on_draw_header');
   Pointer(ft_table_on_draw_cell) := BindFunc('ft_table_on_draw_cell');
+
+  { Bind Icon View }
+  Pointer(ft_icon_view_create) := BindFunc('ft_icon_view_create');
+  Pointer(ft_icon_view_add_item) := BindFunc('ft_icon_view_add_item');
+  Pointer(ft_icon_view_insert_item) := BindFunc('ft_icon_view_insert_item');
+  Pointer(ft_icon_view_delete_item) := BindFunc('ft_icon_view_delete_item');
+  Pointer(ft_icon_view_clear) := BindFunc('ft_icon_view_clear');
+  Pointer(ft_icon_view_get_item_count) := BindFunc('ft_icon_view_get_item_count');
+  Pointer(ft_icon_view_get_item_caption) := BindFunc('ft_icon_view_get_item_caption');
+  Pointer(ft_icon_view_set_item_caption) := BindFunc('ft_icon_view_set_item_caption');
+  Pointer(ft_icon_view_get_item_subtext) := BindFunc('ft_icon_view_get_item_subtext');
+  Pointer(ft_icon_view_set_item_subtext) := BindFunc('ft_icon_view_set_item_subtext');
+  Pointer(ft_icon_view_get_item_icon) := BindFunc('ft_icon_view_get_item_icon');
+  Pointer(ft_icon_view_set_item_icon) := BindFunc('ft_icon_view_set_item_icon');
+  Pointer(ft_icon_view_get_item_tag) := BindFunc('ft_icon_view_get_item_tag');
+  Pointer(ft_icon_view_set_item_tag) := BindFunc('ft_icon_view_set_item_tag');
+  Pointer(ft_icon_view_get_item_data) := BindFunc('ft_icon_view_get_item_data');
+  Pointer(ft_icon_view_set_item_data) := BindFunc('ft_icon_view_set_item_data');
+  Pointer(ft_icon_view_get_selected_index) := BindFunc('ft_icon_view_get_selected_index');
+  Pointer(ft_icon_view_set_selected_index) := BindFunc('ft_icon_view_set_selected_index');
+  Pointer(ft_icon_view_get_multi_select) := BindFunc('ft_icon_view_get_multi_select');
+  Pointer(ft_icon_view_set_multi_select) := BindFunc('ft_icon_view_set_multi_select');
+  Pointer(ft_icon_view_is_item_selected) := BindFunc('ft_icon_view_is_item_selected');
+  Pointer(ft_icon_view_set_item_selected) := BindFunc('ft_icon_view_set_item_selected');
+  Pointer(ft_icon_view_select_all) := BindFunc('ft_icon_view_select_all');
+  Pointer(ft_icon_view_clear_selection) := BindFunc('ft_icon_view_clear_selection');
+  Pointer(ft_icon_view_get_selected_count) := BindFunc('ft_icon_view_get_selected_count');
+  Pointer(ft_icon_view_get_selected_indices) := BindFunc('ft_icon_view_get_selected_indices');
+  Pointer(ft_icon_view_get_zoom_level) := BindFunc('ft_icon_view_get_zoom_level');
+  Pointer(ft_icon_view_set_zoom_level) := BindFunc('ft_icon_view_set_zoom_level');
+  Pointer(ft_icon_view_get_icon_size) := BindFunc('ft_icon_view_get_icon_size');
+  Pointer(ft_icon_view_set_icon_size) := BindFunc('ft_icon_view_set_icon_size');
+  Pointer(ft_icon_view_get_item_width) := BindFunc('ft_icon_view_get_item_width');
+  Pointer(ft_icon_view_set_item_width) := BindFunc('ft_icon_view_set_item_width');
+  Pointer(ft_icon_view_get_item_height) := BindFunc('ft_icon_view_get_item_height');
+  Pointer(ft_icon_view_set_item_height) := BindFunc('ft_icon_view_set_item_height');
+  Pointer(ft_icon_view_get_spacing_x) := BindFunc('ft_icon_view_get_spacing_x');
+  Pointer(ft_icon_view_set_spacing_x) := BindFunc('ft_icon_view_set_spacing_x');
+  Pointer(ft_icon_view_get_spacing_y) := BindFunc('ft_icon_view_get_spacing_y');
+  Pointer(ft_icon_view_set_spacing_y) := BindFunc('ft_icon_view_set_spacing_y');
+  Pointer(ft_icon_view_scroll_into_view) := BindFunc('ft_icon_view_scroll_into_view');
+  Pointer(ft_icon_view_on_select_item) := BindFunc('ft_icon_view_on_select_item');
+  Pointer(ft_icon_view_on_item_activate) := BindFunc('ft_icon_view_on_item_activate');
+  Pointer(ft_icon_view_on_context_menu) := BindFunc('ft_icon_view_on_context_menu');
 
   { Bind File Dialogs }
   Pointer(ft_file_dialog_create) := BindFunc('ft_file_dialog_create');

@@ -91,6 +91,13 @@ type
     ftpbmEdit        = FT_PATH_BAR_MODE_EDIT
   );
 
+  TFtIconZoomLevel = (
+    ftizSmall  = FT_ICON_ZOOM_SMALL,
+    ftizNormal = FT_ICON_ZOOM_NORMAL,
+    ftizLarge  = FT_ICON_ZOOM_LARGE,
+    ftizHuge   = FT_ICON_ZOOM_HUGE
+  );
+
   TFtUrlSecurityState = (
     ftussSecure   = FT_URL_SECURITY_SECURE,
     ftussInsecure = FT_URL_SECURITY_INSECURE,

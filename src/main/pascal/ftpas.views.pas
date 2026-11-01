@@ -25,12 +25,16 @@ type
   TFtTreeNode = class;
   TFtTreeView = class;
   TFtTable = class;
+  TFtIconView = class;
 
   { Event Signatures }
   TFtTreeNodeSelectEvent = procedure(Sender: TFtTreeView; Node: TFtTreeNode) of object;
   TFtTableRowSelectEvent = procedure(Sender: TFtTable; RowIndex: Integer) of object;
   TFtTableRowDblClickEvent = procedure(Sender: TFtTable; RowIndex: Integer) of object;
   TFtTableColumnClickEvent = procedure(Sender: TFtTable; ColumnIndex: Integer) of object;
+  TFtIconSelectEvent = procedure(Sender: TFtIconView; ItemIndex: Integer) of object;
+  TFtIconActivateEvent = procedure(Sender: TFtIconView; ItemIndex: Integer) of object;
+  TFtIconContextMenuEvent = procedure(Sender: TFtIconView; ItemIndex: Integer; ScreenX, ScreenY: Integer) of object;
 
   { TFtTreeNode — Node inside TFtTreeView }
   TFtTreeNode = class
@@ -188,6 +192,89 @@ type
     property OnColumnClick: TFtTableColumnClickEvent read FOnColumnClick write SetOnColumnClick;
   end;
 
+  { TFtIconView — Flow Grid / Icon View widget }
+  TFtIconView = class(TFtContainer)
+  private
+    FOnSelect: TFtIconSelectEvent;
+    FOnActivate: TFtIconActivateEvent;
+    FOnContextMenu: TFtIconContextMenuEvent;
+
+    function  GetItemCount: Integer;
+    function  GetItemCaption(AIndex: Integer): string;
+    procedure SetItemCaption(AIndex: Integer; const ACaption: string);
+    function  GetItemSubtext(AIndex: Integer): string;
+    procedure SetItemSubtext(AIndex: Integer; const ASubtext: string);
+    function  GetItemIcon(AIndex: Integer): TFtBitmap;
+    procedure SetItemIcon(AIndex: Integer; AIcon: TFtBitmap);
+    function  GetItemTag(AIndex: Integer): Integer;
+    procedure SetItemTag(AIndex: Integer; ATag: Integer);
+    function  GetItemData(AIndex: Integer): Pointer;
+    procedure SetItemData(AIndex: Integer; AData: Pointer);
+
+    function  GetSelectedIndex: Integer;
+    procedure SetSelectedIndex(AValue: Integer);
+    function  GetMultiSelect: Boolean;
+    procedure SetMultiSelect(AValue: Boolean);
+    function  GetSelectedCount: Integer;
+
+    function  GetZoomLevel: TFtIconZoomLevel;
+    procedure SetZoomLevel(AValue: TFtIconZoomLevel);
+    function  GetIconSize: Integer;
+    procedure SetIconSize(AValue: Integer);
+    function  GetItemWidth: Double;
+    procedure SetItemWidth(AValue: Double);
+    function  GetItemHeight: Double;
+    procedure SetItemHeight(AValue: Double);
+    function  GetSpacingX: Double;
+    procedure SetSpacingX(AValue: Double);
+    function  GetSpacingY: Double;
+    procedure SetSpacingY(AValue: Double);
+
+    procedure SetOnSelect(AValue: TFtIconSelectEvent);
+    procedure SetOnActivate(AValue: TFtIconActivateEvent);
+    procedure SetOnContextMenu(AValue: TFtIconContextMenuEvent);
+  protected
+    procedure DoSelect(AIndex: Integer); virtual;
+    procedure DoActivate(AIndex: Integer); virtual;
+    procedure DoContextMenu(AIndex, AScreenX, AScreenY: Integer); virtual;
+  public
+    constructor Create(AParent: TFtWidget; AX, AY, AW, AH: Integer); reintroduce;
+
+    function  AddItem(const ACaption: string; AIcon: TFtBitmap = nil): Integer;
+    function  InsertItem(AIndex: Integer; const ACaption: string; AIcon: TFtBitmap = nil): Integer;
+    procedure DeleteItem(AIndex: Integer);
+    procedure Clear();
+
+    function  IsItemSelected(AIndex: Integer): Boolean;
+    procedure SetItemSelected(AIndex: Integer; ASelected: Boolean);
+    procedure SelectAll();
+    procedure ClearSelection();
+    function  GetSelectedIndices(var AOutIndices: array of Integer): Integer;
+    procedure ScrollIntoView(AIndex: Integer);
+
+    property ItemCount: Integer read GetItemCount;
+    property Captions[AIndex: Integer]: string read GetItemCaption write SetItemCaption;
+    property Subtexts[AIndex: Integer]: string read GetItemSubtext write SetItemSubtext;
+    property Icons[AIndex: Integer]: TFtBitmap read GetItemIcon write SetItemIcon;
+    property Tags[AIndex: Integer]: Integer read GetItemTag write SetItemTag;
+    property ItemDatas[AIndex: Integer]: Pointer read GetItemData write SetItemData;
+
+    property SelectedIndex: Integer read GetSelectedIndex write SetSelectedIndex;
+    property MultiSelect: Boolean read GetMultiSelect write SetMultiSelect;
+    property SelectedCount: Integer read GetSelectedCount;
+
+    property ZoomLevel: TFtIconZoomLevel read GetZoomLevel write SetZoomLevel;
+    property IconSize: Integer read GetIconSize write SetIconSize;
+    property ItemWidth: Double read GetItemWidth write SetItemWidth;
+    property ItemHeight: Double read GetItemHeight write SetItemHeight;
+    property SpacingX: Double read GetSpacingX write SetSpacingX;
+    property SpacingY: Double read GetSpacingY write SetSpacingY;
+
+    property OnSelect: TFtIconSelectEvent read FOnSelect write SetOnSelect;
+    property OnActivate: TFtIconActivateEvent read FOnActivate write SetOnActivate;
+    property OnContextMenu: TFtIconContextMenuEvent read FOnContextMenu write SetOnContextMenu;
+  end;
+
 implementation
 
 { C Callback Dispatchers }
@@ -223,6 +310,24 @@ procedure TableColumnClickDispatcher(ATable: Pointer; AColIndex: cint32; AUserDa
 begin
   if AUserData <> nil then
     TFtTable(AUserData).DoColumnClick(AColIndex);
+end;
+
+procedure IconViewSelectDispatcher(ASender: Pointer; AItemIndex: cint32; AUserData: Pointer); cdecl;
+begin
+  if AUserData <> nil then
+    TFtIconView(AUserData).DoSelect(AItemIndex);
+end;
+
+procedure IconViewActivateDispatcher(ASender: Pointer; AItemIndex: cint32; AUserData: Pointer); cdecl;
+begin
+  if AUserData <> nil then
+    TFtIconView(AUserData).DoActivate(AItemIndex);
+end;
+
+procedure IconViewContextMenuDispatcher(ASender: Pointer; AItemIndex, AScreenX, AScreenY: cint32; AUserData: Pointer); cdecl;
+begin
+  if AUserData <> nil then
+    TFtIconView(AUserData).DoContextMenu(AItemIndex, AScreenX, AScreenY);
 end;
 
 { TFtTreeNode }
@@ -850,6 +955,359 @@ procedure TFtTable.DoColumnClick(AColIndex: Integer);
 begin
   if Assigned(FOnColumnClick) then
     FOnColumnClick(Self, AColIndex);
+end;
+
+{ TFtIconView }
+
+constructor TFtIconView.Create(AParent: TFtWidget; AX, AY, AW, AH: Integer);
+var
+  pHandle, h: Pointer;
+begin
+  inherited Create(AParent, AX, AY, AW, AH);
+  if AParent <> nil then pHandle := AParent.Handle else pHandle := nil;
+  if Assigned(ft_icon_view_create) then
+    h := ft_icon_view_create(pHandle, AX, AY, AW, AH)
+  else
+    h := nil;
+  SetHandle(h, True);
+end;
+
+function TFtIconView.AddItem(const ACaption: string; AIcon: TFtBitmap = nil): Integer;
+var
+  bh: Pointer;
+begin
+  if AIcon <> nil then bh := AIcon.Handle else bh := nil;
+  if (Handle <> nil) and Assigned(ft_icon_view_add_item) then
+    Result := ft_icon_view_add_item(Handle, PChar(ACaption), bh)
+  else
+    Result := -1;
+end;
+
+function TFtIconView.InsertItem(AIndex: Integer; const ACaption: string; AIcon: TFtBitmap = nil): Integer;
+var
+  bh: Pointer;
+begin
+  if AIcon <> nil then bh := AIcon.Handle else bh := nil;
+  if (Handle <> nil) and Assigned(ft_icon_view_insert_item) then
+    Result := ft_icon_view_insert_item(Handle, AIndex, PChar(ACaption), bh)
+  else
+    Result := -1;
+end;
+
+procedure TFtIconView.DeleteItem(AIndex: Integer);
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_delete_item) then
+    ft_icon_view_delete_item(Handle, AIndex);
+end;
+
+procedure TFtIconView.Clear();
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_clear) then
+    ft_icon_view_clear(Handle);
+end;
+
+function TFtIconView.GetItemCount: Integer;
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_get_item_count) then
+    Result := ft_icon_view_get_item_count(Handle)
+  else
+    Result := 0;
+end;
+
+function TFtIconView.GetItemCaption(AIndex: Integer): string;
+var
+  p: PChar;
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_get_item_caption) then
+  begin
+    p := ft_icon_view_get_item_caption(Handle, AIndex);
+    if p <> nil then
+      Result := StrPas(p)
+    else
+      Result := '';
+  end
+  else
+    Result := '';
+end;
+
+procedure TFtIconView.SetItemCaption(AIndex: Integer; const ACaption: string);
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_set_item_caption) then
+    ft_icon_view_set_item_caption(Handle, AIndex, PChar(ACaption));
+end;
+
+function TFtIconView.GetItemSubtext(AIndex: Integer): string;
+var
+  p: PChar;
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_get_item_subtext) then
+  begin
+    p := ft_icon_view_get_item_subtext(Handle, AIndex);
+    if p <> nil then
+      Result := StrPas(p)
+    else
+      Result := '';
+  end
+  else
+    Result := '';
+end;
+
+procedure TFtIconView.SetItemSubtext(AIndex: Integer; const ASubtext: string);
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_set_item_subtext) then
+    ft_icon_view_set_item_subtext(Handle, AIndex, PChar(ASubtext));
+end;
+
+function TFtIconView.GetItemIcon(AIndex: Integer): TFtBitmap;
+var
+  bh: Pointer;
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_get_item_icon) then
+  begin
+    bh := ft_icon_view_get_item_icon(Handle, AIndex);
+    if bh <> nil then
+      Result := TFtBitmap.Wrap(bh, False)
+    else
+      Result := nil;
+  end
+  else
+    Result := nil;
+end;
+
+procedure TFtIconView.SetItemIcon(AIndex: Integer; AIcon: TFtBitmap);
+var
+  bh: Pointer;
+begin
+  if AIcon <> nil then bh := AIcon.Handle else bh := nil;
+  if (Handle <> nil) and Assigned(ft_icon_view_set_item_icon) then
+    ft_icon_view_set_item_icon(Handle, AIndex, bh);
+end;
+
+function TFtIconView.GetItemTag(AIndex: Integer): Integer;
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_get_item_tag) then
+    Result := ft_icon_view_get_item_tag(Handle, AIndex)
+  else
+    Result := 0;
+end;
+
+procedure TFtIconView.SetItemTag(AIndex: Integer; ATag: Integer);
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_set_item_tag) then
+    ft_icon_view_set_item_tag(Handle, AIndex, ATag);
+end;
+
+function TFtIconView.GetItemData(AIndex: Integer): Pointer;
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_get_item_data) then
+    Result := ft_icon_view_get_item_data(Handle, AIndex)
+  else
+    Result := nil;
+end;
+
+procedure TFtIconView.SetItemData(AIndex: Integer; AData: Pointer);
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_set_item_data) then
+    ft_icon_view_set_item_data(Handle, AIndex, AData);
+end;
+
+function TFtIconView.GetSelectedIndex: Integer;
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_get_selected_index) then
+    Result := ft_icon_view_get_selected_index(Handle)
+  else
+    Result := -1;
+end;
+
+procedure TFtIconView.SetSelectedIndex(AValue: Integer);
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_set_selected_index) then
+    ft_icon_view_set_selected_index(Handle, AValue);
+end;
+
+function TFtIconView.GetMultiSelect: Boolean;
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_get_multi_select) then
+    Result := ft_icon_view_get_multi_select(Handle) <> 0
+  else
+    Result := False;
+end;
+
+procedure TFtIconView.SetMultiSelect(AValue: Boolean);
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_set_multi_select) then
+    ft_icon_view_set_multi_select(Handle, Ord(AValue));
+end;
+
+function TFtIconView.IsItemSelected(AIndex: Integer): Boolean;
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_is_item_selected) then
+    Result := ft_icon_view_is_item_selected(Handle, AIndex) <> 0
+  else
+    Result := False;
+end;
+
+procedure TFtIconView.SetItemSelected(AIndex: Integer; ASelected: Boolean);
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_set_item_selected) then
+    ft_icon_view_set_item_selected(Handle, AIndex, Ord(ASelected));
+end;
+
+procedure TFtIconView.SelectAll();
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_select_all) then
+    ft_icon_view_select_all(Handle);
+end;
+
+procedure TFtIconView.ClearSelection();
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_clear_selection) then
+    ft_icon_view_clear_selection(Handle);
+end;
+
+function TFtIconView.GetSelectedCount: Integer;
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_get_selected_count) then
+    Result := ft_icon_view_get_selected_count(Handle)
+  else
+    Result := 0;
+end;
+
+function TFtIconView.GetSelectedIndices(var AOutIndices: array of Integer): Integer;
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_get_selected_indices) and (Length(AOutIndices) > 0) then
+    Result := ft_icon_view_get_selected_indices(Handle, @AOutIndices[0], Length(AOutIndices))
+  else
+    Result := 0;
+end;
+
+function TFtIconView.GetZoomLevel: TFtIconZoomLevel;
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_get_zoom_level) then
+    Result := TFtIconZoomLevel(ft_icon_view_get_zoom_level(Handle))
+  else
+    Result := ftizNormal;
+end;
+
+procedure TFtIconView.SetZoomLevel(AValue: TFtIconZoomLevel);
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_set_zoom_level) then
+    ft_icon_view_set_zoom_level(Handle, Ord(AValue));
+end;
+
+function TFtIconView.GetIconSize: Integer;
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_get_icon_size) then
+    Result := ft_icon_view_get_icon_size(Handle)
+  else
+    Result := 48;
+end;
+
+procedure TFtIconView.SetIconSize(AValue: Integer);
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_set_icon_size) then
+    ft_icon_view_set_icon_size(Handle, AValue);
+end;
+
+function TFtIconView.GetItemWidth: Double;
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_get_item_width) then
+    Result := ft_icon_view_get_item_width(Handle)
+  else
+    Result := 96.0;
+end;
+
+procedure TFtIconView.SetItemWidth(AValue: Double);
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_set_item_width) then
+    ft_icon_view_set_item_width(Handle, AValue);
+end;
+
+function TFtIconView.GetItemHeight: Double;
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_get_item_height) then
+    Result := ft_icon_view_get_item_height(Handle)
+  else
+    Result := 88.0;
+end;
+
+procedure TFtIconView.SetItemHeight(AValue: Double);
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_set_item_height) then
+    ft_icon_view_set_item_height(Handle, AValue);
+end;
+
+function TFtIconView.GetSpacingX: Double;
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_get_spacing_x) then
+    Result := ft_icon_view_get_spacing_x(Handle)
+  else
+    Result := 12.0;
+end;
+
+procedure TFtIconView.SetSpacingX(AValue: Double);
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_set_spacing_x) then
+    ft_icon_view_set_spacing_x(Handle, AValue);
+end;
+
+function TFtIconView.GetSpacingY: Double;
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_get_spacing_y) then
+    Result := ft_icon_view_get_spacing_y(Handle)
+  else
+    Result := 12.0;
+end;
+
+procedure TFtIconView.SetSpacingY(AValue: Double);
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_set_spacing_y) then
+    ft_icon_view_set_spacing_y(Handle, AValue);
+end;
+
+procedure TFtIconView.ScrollIntoView(AIndex: Integer);
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_scroll_into_view) then
+    ft_icon_view_scroll_into_view(Handle, AIndex);
+end;
+
+procedure TFtIconView.SetOnSelect(AValue: TFtIconSelectEvent);
+begin
+  FOnSelect := AValue;
+  if (Handle <> nil) and Assigned(ft_icon_view_on_select_item) then
+    ft_icon_view_on_select_item(Handle, @IconViewSelectDispatcher, Self);
+end;
+
+procedure TFtIconView.SetOnActivate(AValue: TFtIconActivateEvent);
+begin
+  FOnActivate := AValue;
+  if (Handle <> nil) and Assigned(ft_icon_view_on_item_activate) then
+    ft_icon_view_on_item_activate(Handle, @IconViewActivateDispatcher, Self);
+end;
+
+procedure TFtIconView.SetOnContextMenu(AValue: TFtIconContextMenuEvent);
+begin
+  FOnContextMenu := AValue;
+  if (Handle <> nil) and Assigned(ft_icon_view_on_context_menu) then
+    ft_icon_view_on_context_menu(Handle, @IconViewContextMenuDispatcher, Self);
+end;
+
+procedure TFtIconView.DoSelect(AIndex: Integer);
+begin
+  if Assigned(FOnSelect) then
+    FOnSelect(Self, AIndex);
+end;
+
+procedure TFtIconView.DoActivate(AIndex: Integer);
+begin
+  if Assigned(FOnActivate) then
+    FOnActivate(Self, AIndex);
+end;
+
+procedure TFtIconView.DoContextMenu(AIndex, AScreenX, AScreenY: Integer);
+begin
+  if Assigned(FOnContextMenu) then
+    FOnContextMenu(Self, AIndex, AScreenX, AScreenY);
 end;
 
 end.

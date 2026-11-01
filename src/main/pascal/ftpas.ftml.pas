@@ -85,6 +85,8 @@ type
     procedure HandleTreeSelect(Sender: TFtTreeView; Node: TFtTreeNode);
     procedure HandleTableRowSelect(Sender: TFtTable; RowIndex: Integer);
     procedure HandleTableRowDblClick(Sender: TFtTable; RowIndex: Integer);
+    procedure HandleIconSelect(Sender: TFtIconView; ItemIndex: Integer);
+    procedure HandleIconActivate(Sender: TFtIconView; ItemIndex: Integer);
   end;
 
   { TFtFTMLHost — Container widget hosting an FTML component hierarchy }
@@ -408,6 +410,24 @@ begin
   end;
 end;
 
+procedure TFtFTMLSignalBridge.HandleIconSelect(Sender: TFtIconView; ItemIndex: Integer);
+begin
+  if (FHost <> nil) and (FItem <> nil) and not FHost.FIsSyncing then
+  begin
+    FItem.SetProperty('selectedIndex', JSMakeNumber(ItemIndex));
+    FHost.EmitItemSignal(FItem, 'select');
+  end;
+end;
+
+procedure TFtFTMLSignalBridge.HandleIconActivate(Sender: TFtIconView; ItemIndex: Integer);
+begin
+  if (FHost <> nil) and (FItem <> nil) and not FHost.FIsSyncing then
+  begin
+    FItem.SetProperty('selectedIndex', JSMakeNumber(ItemIndex));
+    FHost.EmitItemSignal(FItem, 'activate');
+  end;
+end;
+
 { TFtFTMLHost }
 
 constructor TFtFTMLHost.Create(AParent: TFtWidget; AX, AY, AW, AH: Integer);
@@ -623,6 +643,11 @@ begin
   begin
     TFtTable(AWidget).OnSelectRow := @bridge.HandleTableRowSelect;
     TFtTable(AWidget).OnRowDoubleClick := @bridge.HandleTableRowDblClick;
+  end
+  else if AWidget is TFtIconView then
+  begin
+    TFtIconView(AWidget).OnSelect := @bridge.HandleIconSelect;
+    TFtIconView(AWidget).OnActivate := @bridge.HandleIconActivate;
   end;
 end;
 
@@ -718,6 +743,7 @@ var
   anchorMode: TFtAnchorMode;
   textAlign: TFtTextAlign;
   rowIdx: Integer;
+  zoomStr: string;
 begin
   if AItem = nil then Exit(nil);
 
@@ -921,6 +947,10 @@ begin
         end;
       end;
     end;
+    if AItem.HasProperty('isToggle') then
+      TFtButton(W).IsToggle := AItem.GetPropertyAsBoolean('isToggle', False);
+    if AItem.HasProperty('toggled') or AItem.HasProperty('checked') then
+      TFtButton(W).Toggled := AItem.GetPropertyAsBoolean('toggled', AItem.GetPropertyAsBoolean('checked', False));
     AttachSignals(AItem, W);
   end
   else if (AItem.TypeName = 'Text') or (AItem.TypeName = 'Label') then
@@ -1626,6 +1656,57 @@ begin
     curVal := AItem.GetPropertyAsNumber('selectedRow', -1.0);
     if curVal >= 0.0 then
       TFtTable(W).SelectedRow := Round(curVal);
+
+    AttachSignals(AItem, W);
+  end
+  else if (AItem.TypeName = 'IconView') or (AItem.TypeName = 'FlowGrid') then
+  begin
+    if (iw <= 0) and (AParentWidget <> nil) and (AParentWidget.Width > ix) then
+      iw := AParentWidget.Width - ix;
+    if (ih <= 0) and (AParentWidget <> nil) and (AParentWidget.Height > iy) then
+      ih := AParentWidget.Height - iy;
+    if iw <= 0 then iw := 300;
+    if ih <= 0 then ih := 200;
+    W := TFtIconView.Create(AParentWidget, ix, iy, iw, ih);
+    if AItem.HasProperty('zoomLevel') then
+    begin
+      zoomStr := LowerCase(AItem.GetPropertyAsString('zoomLevel'));
+      if zoomStr = 'small' then TFtIconView(W).ZoomLevel := ftizSmall
+      else if zoomStr = 'normal' then TFtIconView(W).ZoomLevel := ftizNormal
+      else if zoomStr = 'large' then TFtIconView(W).ZoomLevel := ftizLarge
+      else if zoomStr = 'huge' then TFtIconView(W).ZoomLevel := ftizHuge;
+    end;
+    if AItem.HasProperty('iconSize') then
+      TFtIconView(W).IconSize := Round(AItem.GetPropertyAsNumber('iconSize', 48.0));
+    if AItem.HasProperty('itemWidth') then
+      TFtIconView(W).ItemWidth := AItem.GetPropertyAsNumber('itemWidth', 96.0);
+    if AItem.HasProperty('itemHeight') then
+      TFtIconView(W).ItemHeight := AItem.GetPropertyAsNumber('itemHeight', 88.0);
+    if AItem.HasProperty('spacingX') then
+      TFtIconView(W).SpacingX := AItem.GetPropertyAsNumber('spacingX', 12.0);
+    if AItem.HasProperty('spacingY') then
+      TFtIconView(W).SpacingY := AItem.GetPropertyAsNumber('spacingY', 12.0);
+    if AItem.HasProperty('multiSelect') then
+      TFtIconView(W).MultiSelect := AItem.GetPropertyAsBoolean('multiSelect', False);
+    if AItem.HasProperty('drawFrame') then
+      TFtIconView(W).DrawFrame := AItem.GetPropertyAsBoolean('drawFrame', False);
+
+    childrenHandled := True;
+    for i := 0 to AItem.ChildCount() - 1 do
+    begin
+      subItem := AItem.GetChild(i);
+      if (subItem.TypeName = 'IconItem') or (subItem.TypeName = 'Item') then
+      begin
+        titleStr := subItem.GetPropertyAsString('caption', subItem.GetPropertyAsString('text', ''));
+        rowIdx := TFtIconView(W).AddItem(titleStr);
+        if subItem.HasProperty('subtext') then
+          TFtIconView(W).Subtexts[rowIdx] := subItem.GetPropertyAsString('subtext');
+      end;
+    end;
+
+    curVal := AItem.GetPropertyAsNumber('selectedIndex', -1.0);
+    if curVal >= 0.0 then
+      TFtIconView(W).SelectedIndex := Round(curVal);
 
     AttachSignals(AItem, W);
   end

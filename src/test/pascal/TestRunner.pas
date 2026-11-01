@@ -68,11 +68,12 @@ type
     procedure TestNotebookConstraintsAndScrolling();
   end;
 
-  { Test 6: Data Views (Table & TreeView) }
+  { Test 6: Data Views (Table, TreeView & IconView) }
   TViewsTest = class(TTestCase)
   published
     procedure TestTableColumnsAndRows();
     procedure TestTreeViewNodes();
+    procedure TestIconView();
   end;
 
   { Test 7: Creative Tools Suite }
@@ -628,6 +629,43 @@ begin
     AssertTrue('Root node should be expanded', rootNode.Expanded);
     rootNode.Expanded := False;
     AssertFalse('Root node should be collapsed', rootNode.Expanded);
+  finally
+    win.Free();
+  end;
+end;
+
+procedure TViewsTest.TestIconView();
+var
+  win: TFtWindow;
+  iv: TFtIconView;
+  idx0, idx1: Integer;
+begin
+  win := TFtWindow.Create(500, 400, 'IconViewTest');
+  try
+    iv := TFtIconView.Create(win, 10, 10, 480, 360);
+    idx0 := iv.AddItem('Document.pdf');
+    iv.Subtexts[idx0] := '1.2 MB';
+    idx1 := iv.AddItem('Photo.png');
+    iv.Subtexts[idx1] := '3.4 MB';
+
+    AssertEquals('IconView item count should be 2', 2, iv.ItemCount);
+    AssertEquals('Item 0 caption should match', 'Document.pdf', iv.Captions[idx0]);
+    AssertEquals('Item 0 subtext should match', '1.2 MB', iv.Subtexts[idx0]);
+    AssertEquals('Item 1 caption should match', 'Photo.png', iv.Captions[idx1]);
+
+    iv.ZoomLevel := ftizLarge;
+    AssertEquals('ZoomLevel should be large', Ord(ftizLarge), Ord(iv.ZoomLevel));
+    AssertEquals('Icon size for large should be 64', 64, iv.IconSize);
+
+    iv.SelectedIndex := idx1;
+    AssertEquals('Selected index should be 1', idx1, iv.SelectedIndex);
+    AssertTrue('Item 1 should be selected', iv.IsItemSelected(idx1));
+
+    iv.ClearSelection();
+    AssertEquals('Selected index after clear should be -1', -1, iv.SelectedIndex);
+
+    iv.Clear();
+    AssertEquals('Item count after clear should be 0', 0, iv.ItemCount);
   finally
     win.Free();
   end;
