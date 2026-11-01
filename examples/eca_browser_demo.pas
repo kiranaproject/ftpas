@@ -221,24 +221,17 @@ type
 procedure TEcaBrowserWindow.DoMouseDown(AX, AY, AButton: Integer);
 var
   wx, wy, rootX, rootY: Integer;
-  tabStartX, tabEndX: Integer;
 begin
   inherited DoMouseDown(AX, AY, AButton);
 
   if (AButton = 1) and (AY <= 42) then
   begin
-    tabStartX := WindowControlsInset.Left + 8;
-    tabEndX := tabStartX + (3 * (130 + 6)) + 20;
-
-    // Only initiate move if clicking outside the tab buttons strip
-    if (AX < tabStartX) or (AX > tabEndX) then
-    begin
-      GetPosition(wx, wy);
-      rootX := wx + AX;
-      rootY := wy + AY;
-      WriteLn('[FTML ECA Browser] Window drag initiated via _NET_WM_MOVERESIZE at root (', rootX, ', ', rootY, ')');
-      BeginWindowMove(rootX, rootY);
-    end;
+    GetPosition(wx, wy);
+    rootX := wx + AX;
+    rootY := wy + AY;
+    WriteLn('[FTML ECA Browser] Window drag initiated via _NET_WM_MOVERESIZE at root (', rootX, ', ', rootY, ')');
+    Flush(Output);
+    BeginWindowMove(rootX, rootY);
   end;
 end;
 
