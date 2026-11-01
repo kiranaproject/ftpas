@@ -108,6 +108,7 @@ type
     procedure TestFTMLNotebookProperties();
     procedure TestFTMLExtendedClientAreaDeclarative();
     procedure TestFTMLUrlEntryDeclarative();
+    procedure TestFTMLRemainingWidgetsDeclarative();
   end;
 
 { TLibraryLoadingTest }
@@ -1355,6 +1356,229 @@ begin
 
     AssertEquals('Reactive URL must update in TFtUrlEntry', 'https://floria.dev/updated-url', urlEntry.Url);
     AssertEquals('Reactive SecurityState must update to ftussInsecure (1)', Integer(ftussInsecure), Integer(urlEntry.SecurityState));
+  finally
+    win.Free();
+  end;
+end;
+
+procedure TFTMLIntegrationTest.TestFTMLRemainingWidgetsDeclarative();
+var
+  win: TFtFTMLWindow;
+  cbW, pbW, wbW, scW, ruW, fbW, fgW, tvW, tbW, pmW, ueW: TFtWidget;
+  cb: TFtComboBox;
+  pb: TFtPathBar;
+  wb: TFtWindowButton;
+  sc: TFtNumberScrubber;
+  ru: TFtRuler;
+  fb: TFtFloatingBar;
+  fg: TFtFormGrid;
+  tv: TFtTreeView;
+  tb: TFtTable;
+  pm: TFtPopupMenu;
+const
+  SRC =
+    'Window {' + LineEnding +
+    '  id: mainWindow;' + LineEnding +
+    '  property int comboIdx: 1;' + LineEnding +
+    '  property string currentPath: "/home/user/documents";' + LineEnding +
+    '  property double scrubVal: 42.5;' + LineEnding +
+    '  property int selectedTableRow: 0;' + LineEnding +
+    '' + LineEnding +
+    '  ComboBox {' + LineEnding +
+    '    id: myCombo;' + LineEnding +
+    '    width: 180; height: 32;' + LineEnding +
+    '    placeholder: "Select item...";' + LineEnding +
+    '    selectedIndex: mainWindow.comboIdx;' + LineEnding +
+    '    Item { text: "Alpha"; }' + LineEnding +
+    '    Item { text: "Beta"; }' + LineEnding +
+    '    Item { text: "Gamma"; }' + LineEnding +
+    '  }' + LineEnding +
+    '' + LineEnding +
+    '  PathBar {' + LineEnding +
+    '    id: myPathBar;' + LineEnding +
+    '    width: 320; height: 32;' + LineEnding +
+    '    path: mainWindow.currentPath;' + LineEnding +
+    '    mode: "breadcrumbs";' + LineEnding +
+    '    rootDisplayName: "Home";' + LineEnding +
+    '  }' + LineEnding +
+    '' + LineEnding +
+    '  WindowButton {' + LineEnding +
+    '    id: myWinBtn;' + LineEnding +
+    '    kind: "close";' + LineEnding +
+    '    buttonStyle: "squircle";' + LineEnding +
+    '    glyphArm: 7.0;' + LineEnding +
+    '  }' + LineEnding +
+    '' + LineEnding +
+    '  NumberScrubber {' + LineEnding +
+    '    id: myScrubber;' + LineEnding +
+    '    label: "Zoom:";' + LineEnding +
+    '    min: 10.0; max: 200.0; step: 0.5; decimals: 1;' + LineEnding +
+    '    value: mainWindow.scrubVal;' + LineEnding +
+    '    suffix: "%";' + LineEnding +
+    '  }' + LineEnding +
+    '' + LineEnding +
+    '  Ruler {' + LineEnding +
+    '    id: myRuler;' + LineEnding +
+    '    orientation: "horizontal";' + LineEnding +
+    '    unit: "pixels";' + LineEnding +
+    '    thickness: 24;' + LineEnding +
+    '    showPointer: true;' + LineEnding +
+    '  }' + LineEnding +
+    '' + LineEnding +
+    '  FloatingBar {' + LineEnding +
+    '    id: myFloatingBar;' + LineEnding +
+    '    width: 250; height: 40;' + LineEnding +
+    '    anchor: "bottomCenter";' + LineEnding +
+    '    marginX: 12; marginY: 16;' + LineEnding +
+    '  }' + LineEnding +
+    '' + LineEnding +
+    '  FormGrid {' + LineEnding +
+    '    id: myFormGrid;' + LineEnding +
+    '    width: 350; height: 200;' + LineEnding +
+    '    FormRow {' + LineEnding +
+    '      label: "Username";' + LineEnding +
+    '      Entry { id: userEntry; text: "admin"; }' + LineEnding +
+    '    }' + LineEnding +
+    '    FormSection {' + LineEnding +
+    '      title: "Settings";' + LineEnding +
+    '    }' + LineEnding +
+    '  }' + LineEnding +
+    '' + LineEnding +
+    '  TreeView {' + LineEnding +
+    '    id: myTree;' + LineEnding +
+    '    width: 200; height: 200;' + LineEnding +
+    '    TreeNode {' + LineEnding +
+    '      text: "RootNode";' + LineEnding +
+    '      TreeNode { text: "Child1"; }' + LineEnding +
+    '      TreeNode { text: "Child2"; }' + LineEnding +
+    '    }' + LineEnding +
+    '  }' + LineEnding +
+    '' + LineEnding +
+    '  Table {' + LineEnding +
+    '    id: myTable;' + LineEnding +
+    '    width: 350; height: 180;' + LineEnding +
+    '    selectedRow: mainWindow.selectedTableRow;' + LineEnding +
+    '    TableColumn { title: "ID"; width: 60; }' + LineEnding +
+    '    TableColumn { title: "Name"; width: 140; }' + LineEnding +
+    '    TableRow {' + LineEnding +
+    '      Item { text: "1"; }' + LineEnding +
+    '      Item { text: "First Item"; }' + LineEnding +
+    '    }' + LineEnding +
+    '    TableRow {' + LineEnding +
+    '      Item { text: "2"; }' + LineEnding +
+    '      Item { text: "Second Item"; }' + LineEnding +
+    '    }' + LineEnding +
+    '  }' + LineEnding +
+    '' + LineEnding +
+    '  PopupMenu {' + LineEnding +
+    '    id: myPopup;' + LineEnding +
+    '    MenuItem { id: menuCopy; text: "Copy"; shortcut: "Ctrl+C"; }' + LineEnding +
+    '    Separator {}' + LineEnding +
+    '    MenuItem { id: menuCheck; text: "Toggle"; checkable: true; checked: true; }' + LineEnding +
+    '  }' + LineEnding +
+    '}' + LineEnding;
+begin
+  win := TFtFTMLWindow.Create(800, 600, 'Remaining Widgets Test');
+  try
+    AssertNotNull('FTML root item should load', win.LoadString(SRC));
+
+    // 1. ComboBox
+    cbW := win.FindWidget('myCombo');
+    AssertNotNull('ComboBox found', cbW);
+    AssertTrue('is TFtComboBox', cbW is TFtComboBox);
+    cb := TFtComboBox(cbW);
+    AssertEquals('ItemCount is 3', 3, cb.ItemCount);
+    AssertEquals('SelectedIndex is 1', 1, cb.SelectedIndex);
+    AssertEquals('Item 0 is Alpha', 'Alpha', cb.Items[0]);
+    AssertEquals('Item 1 is Beta', 'Beta', cb.Items[1]);
+
+    // 2. PathBar
+    pbW := win.FindWidget('myPathBar');
+    AssertNotNull('PathBar found', pbW);
+    AssertTrue('is TFtPathBar', pbW is TFtPathBar);
+    pb := TFtPathBar(pbW);
+    AssertEquals('Path matches', '/home/user/documents', pb.Path);
+    AssertEquals('Mode is Breadcrumbs', Integer(ftpbmBreadcrumbs), Integer(pb.Mode));
+    AssertEquals('RootDisplayName', 'Home', pb.RootDisplayName);
+
+    // 3. WindowButton
+    wbW := win.FindWidget('myWinBtn');
+    AssertNotNull('WindowButton found', wbW);
+    AssertTrue('is TFtWindowButton', wbW is TFtWindowButton);
+    wb := TFtWindowButton(wbW);
+    AssertEquals('Kind is Close', Integer(ftwbClose), Integer(wb.Kind));
+    AssertEquals('Style is Squircle', Integer(ftwsSquircle), Integer(wb.Style));
+    AssertEquals('GlyphArm is 7.0', 7.0, wb.GlyphArm, 0.001);
+
+    // 4. NumberScrubber
+    scW := win.FindWidget('myScrubber');
+    AssertNotNull('NumberScrubber found', scW);
+    AssertTrue('is TFtNumberScrubber', scW is TFtNumberScrubber);
+    sc := TFtNumberScrubber(scW);
+    AssertEquals('Value is 42.5', 42.5, sc.Value, 0.001);
+
+    // 5. Ruler
+    ruW := win.FindWidget('myRuler');
+    AssertNotNull('Ruler found', ruW);
+    AssertTrue('is TFtRuler', ruW is TFtRuler);
+    ru := TFtRuler(ruW);
+    AssertEquals('UnitKind is Pixels', Integer(ftruPixels), Integer(ru.UnitKind));
+
+    // 6. FloatingBar
+    fbW := win.FindWidget('myFloatingBar');
+    AssertNotNull('FloatingBar found', fbW);
+    AssertTrue('is TFtFloatingBar', fbW is TFtFloatingBar);
+    fb := TFtFloatingBar(fbW);
+    AssertEquals('Anchor is BottomCenter', Integer(ftamBottomCenter), Integer(fb.Anchor));
+
+    // 7. FormGrid
+    fgW := win.FindWidget('myFormGrid');
+    AssertNotNull('FormGrid found', fgW);
+    AssertTrue('is TFtFormGrid', fgW is TFtFormGrid);
+    ueW := win.FindWidget('userEntry');
+    AssertNotNull('userEntry inside FormRow found', ueW);
+    AssertTrue('userEntry is TFtEntry', ueW is TFtEntry);
+    AssertEquals('userEntry text is admin', 'admin', TFtEntry(ueW).Text);
+
+    // 8. TreeView
+    tvW := win.FindWidget('myTree');
+    AssertNotNull('TreeView found', tvW);
+    AssertTrue('is TFtTreeView', tvW is TFtTreeView);
+    tv := TFtTreeView(tvW);
+    AssertNotNull('tv.Root should not be nil', tv.Root);
+
+    // 9. Table
+    tbW := win.FindWidget('myTable');
+    AssertNotNull('Table found', tbW);
+    AssertTrue('is TFtTable', tbW is TFtTable);
+    tb := TFtTable(tbW);
+    AssertEquals('ColumnCount is 2', 2, tb.ColumnCount);
+    AssertEquals('RowCount is 2', 2, tb.RowCount);
+    AssertEquals('Cell 0,0 is 1', '1', tb.GetCell(0, 0));
+    AssertEquals('Cell 0,1 is First Item', 'First Item', tb.GetCell(0, 1));
+    AssertEquals('SelectedRow is 0', 0, tb.SelectedRow);
+
+    // 10. PopupMenu
+    pmW := win.FindWidget('myPopup');
+    AssertNotNull('PopupMenu found', pmW);
+    AssertTrue('is TFtPopupMenu', pmW is TFtPopupMenu);
+    pm := TFtPopupMenu(pmW);
+    AssertEquals('ItemCount is 3', 3, pm.ItemCount);
+    AssertEquals('Item 0 caption is Copy', 'Copy', pm.Items[0].Caption);
+    AssertEquals('Item 0 shortcut is Ctrl+C', 'Ctrl+C', pm.Items[0].Shortcut);
+    AssertTrue('Item 2 is checked', pm.Items[2].Checked);
+
+    // Reactive Updates via JavaScript
+    win.Evaluate('mainWindow.comboIdx = 2;');
+    win.Evaluate('mainWindow.currentPath = "/var/log";');
+    win.Evaluate('mainWindow.scrubVal = 85.0;');
+    win.Evaluate('mainWindow.selectedTableRow = 1;');
+    win.SyncProperties();
+
+    AssertEquals('Reactive ComboBox SelectedIndex', 2, cb.SelectedIndex);
+    AssertEquals('Reactive PathBar Path', '/var/log', pb.Path);
+    AssertEquals('Reactive Scrubber Value', 85.0, sc.Value, 0.001);
+    AssertEquals('Reactive Table SelectedRow', 1, tb.SelectedRow);
   finally
     win.Free();
   end;

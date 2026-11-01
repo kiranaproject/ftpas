@@ -22,7 +22,7 @@ uses
   Classes, SysUtils, Math,
   floriajs,
   ftpas.types, ftpas.api, ftpas.widget, ftpas.window,
-  ftpas.controls, ftpas.layouts, ftpas.creative, ftpas.menus,
+  ftpas.controls, ftpas.layouts, ftpas.creative, ftpas.views, ftpas.menus,
   ftpas.ftml.res;
 
 type
@@ -76,6 +76,15 @@ type
     procedure HandleUrlSubmit(Sender: TFtUrlEntry; const Url: string);
     procedure HandleUrlSecurityClick(Sender: TFtUrlEntry; SecurityState: TFtUrlSecurityState);
     procedure HandleUrlBookmarkClick(Sender: TFtUrlEntry; Bookmarked: Boolean);
+    procedure HandleComboBoxChange(Sender: TFtComboBox; SelectedIndex: Integer; const Text: string);
+    procedure HandlePathNavigate(Sender: TFtPathBar; const Path: string);
+    procedure HandlePathModeChange(Sender: TFtPathBar; Mode: TFtPathBarMode);
+    procedure HandleWindowButtonClick(Sender: TFtWindowButton);
+    procedure HandleScrubberChange(Sender: TFtNumberScrubber; NewValue: Double);
+    procedure HandleRulerCreateGuide(Sender: TFtRuler; WorldPos: Double);
+    procedure HandleTreeSelect(Sender: TFtTreeView; Node: TFtTreeNode);
+    procedure HandleTableRowSelect(Sender: TFtTable; RowIndex: Integer);
+    procedure HandleTableRowDblClick(Sender: TFtTable; RowIndex: Integer);
   end;
 
   { TFtFTMLHost — Container widget hosting an FTML component hierarchy }
@@ -302,6 +311,100 @@ begin
   end;
 end;
 
+procedure TFtFTMLSignalBridge.HandleComboBoxChange(Sender: TFtComboBox; SelectedIndex: Integer; const Text: string);
+begin
+  if (FHost <> nil) and (FItem <> nil) and not FHost.FIsSyncing then
+  begin
+    FItem.SetProperty('selectedIndex', JSMakeNumber(SelectedIndex));
+    FItem.SetProperty('text', JSMakeString(Text));
+    FHost.EmitItemSignal(FItem, 'change');
+    FHost.EmitItemSignal(FItem, 'changed');
+    FHost.SyncProperties();
+  end;
+end;
+
+procedure TFtFTMLSignalBridge.HandlePathNavigate(Sender: TFtPathBar; const Path: string);
+begin
+  if (FHost <> nil) and (FItem <> nil) and not FHost.FIsSyncing then
+  begin
+    FItem.SetProperty('path', JSMakeString(Path));
+    FHost.EmitItemSignal(FItem, 'navigate');
+    FHost.EmitItemSignal(FItem, 'navigated');
+    FHost.SyncProperties();
+  end;
+end;
+
+procedure TFtFTMLSignalBridge.HandlePathModeChange(Sender: TFtPathBar; Mode: TFtPathBarMode);
+begin
+  if (FHost <> nil) and (FItem <> nil) and not FHost.FIsSyncing then
+  begin
+    FItem.SetProperty('mode', JSMakeNumber(Ord(Mode)));
+    FHost.EmitItemSignal(FItem, 'modeChanged');
+  end;
+end;
+
+procedure TFtFTMLSignalBridge.HandleWindowButtonClick(Sender: TFtWindowButton);
+begin
+  if (FHost <> nil) and (FItem <> nil) and not FHost.FIsSyncing then
+  begin
+    FHost.EmitItemSignal(FItem, 'click');
+    FHost.EmitItemSignal(FItem, 'clicked');
+  end;
+end;
+
+procedure TFtFTMLSignalBridge.HandleScrubberChange(Sender: TFtNumberScrubber; NewValue: Double);
+begin
+  if (FHost <> nil) and (FItem <> nil) and not FHost.FIsSyncing then
+  begin
+    FItem.SetProperty('value', JSMakeNumber(NewValue));
+    FHost.EmitItemSignal(FItem, 'change');
+    FHost.EmitItemSignal(FItem, 'changed');
+    FHost.SyncProperties();
+  end;
+end;
+
+procedure TFtFTMLSignalBridge.HandleRulerCreateGuide(Sender: TFtRuler; WorldPos: Double);
+begin
+  if (FHost <> nil) and (FItem <> nil) and not FHost.FIsSyncing then
+  begin
+    FItem.SetProperty('guidePosition', JSMakeNumber(WorldPos));
+    FHost.EmitItemSignal(FItem, 'createGuide');
+  end;
+end;
+
+procedure TFtFTMLSignalBridge.HandleTreeSelect(Sender: TFtTreeView; Node: TFtTreeNode);
+begin
+  if (FHost <> nil) and (FItem <> nil) and not FHost.FIsSyncing then
+  begin
+    if Node <> nil then
+      FItem.SetProperty('selectedText', JSMakeString(Node.Text))
+    else
+      FItem.SetProperty('selectedText', JSMakeString(''));
+    FHost.EmitItemSignal(FItem, 'select');
+    FHost.EmitItemSignal(FItem, 'selected');
+  end;
+end;
+
+procedure TFtFTMLSignalBridge.HandleTableRowSelect(Sender: TFtTable; RowIndex: Integer);
+begin
+  if (FHost <> nil) and (FItem <> nil) and not FHost.FIsSyncing then
+  begin
+    FItem.SetProperty('selectedRow', JSMakeNumber(RowIndex));
+    FHost.EmitItemSignal(FItem, 'rowSelected');
+    FHost.EmitItemSignal(FItem, 'select');
+    FHost.SyncProperties();
+  end;
+end;
+
+procedure TFtFTMLSignalBridge.HandleTableRowDblClick(Sender: TFtTable; RowIndex: Integer);
+begin
+  if (FHost <> nil) and (FItem <> nil) and not FHost.FIsSyncing then
+  begin
+    FItem.SetProperty('selectedRow', JSMakeNumber(RowIndex));
+    FHost.EmitItemSignal(FItem, 'rowDoubleClicked');
+  end;
+end;
+
 { TFtFTMLHost }
 
 constructor TFtFTMLHost.Create(AParent: TFtWidget; AX, AY, AW, AH: Integer);
@@ -469,6 +572,44 @@ begin
     TFtUrlEntry(AWidget).OnSubmit := @bridge.HandleUrlSubmit;
     TFtUrlEntry(AWidget).OnSecurityClick := @bridge.HandleUrlSecurityClick;
     TFtUrlEntry(AWidget).OnBookmarkClick := @bridge.HandleUrlBookmarkClick;
+  end
+  else if AWidget is TFtTextArea then
+  begin
+    TFtTextArea(AWidget).OnChange := @bridge.HandleTextAreaChange;
+  end
+  else if AWidget is TFtRadioButton then
+  begin
+    TFtRadioButton(AWidget).OnChange := @bridge.HandleRadioChange;
+  end
+  else if AWidget is TFtComboBox then
+  begin
+    TFtComboBox(AWidget).OnChange := @bridge.HandleComboBoxChange;
+  end
+  else if AWidget is TFtPathBar then
+  begin
+    TFtPathBar(AWidget).OnNavigate := @bridge.HandlePathNavigate;
+    TFtPathBar(AWidget).OnModeChange := @bridge.HandlePathModeChange;
+  end
+  else if AWidget is TFtWindowButton then
+  begin
+    TFtWindowButton(AWidget).OnClick := @bridge.HandleWindowButtonClick;
+  end
+  else if AWidget is TFtNumberScrubber then
+  begin
+    TFtNumberScrubber(AWidget).OnChange := @bridge.HandleScrubberChange;
+  end
+  else if AWidget is TFtRuler then
+  begin
+    TFtRuler(AWidget).OnCreateGuide := @bridge.HandleRulerCreateGuide;
+  end
+  else if AWidget is TFtTreeView then
+  begin
+    TFtTreeView(AWidget).OnSelect := @bridge.HandleTreeSelect;
+  end
+  else if AWidget is TFtTable then
+  begin
+    TFtTable(AWidget).OnSelectRow := @bridge.HandleTableRowSelect;
+    TFtTable(AWidget).OnRowDoubleClick := @bridge.HandleTableRowDblClick;
   end;
 end;
 
@@ -509,6 +650,30 @@ begin
   end;
 end;
 
+procedure PopulateTreeNodes(AItem: TFloriaFTMLItem; AParentNode: TFtTreeNode; ATree: TFtTreeView);
+var
+  k: Integer;
+  childItem: TFloriaFTMLItem;
+  node: TFtTreeNode;
+  nodeText: string;
+begin
+  for k := 0 to AItem.ChildCount() - 1 do
+  begin
+    childItem := AItem.GetChild(k);
+    if (childItem.TypeName = 'TreeNode') or (childItem.TypeName = 'Node') or (childItem.TypeName = 'Item') then
+    begin
+      nodeText := childItem.GetPropertyAsString('text', childItem.GetPropertyAsString('caption', 'Node'));
+      if AParentNode = nil then
+        node := ATree.AddRoot(nodeText)
+      else
+        node := AParentNode.AddChild(nodeText);
+      if childItem.HasProperty('expanded') then
+        node.Expanded := childItem.GetPropertyAsBoolean('expanded', True);
+      PopulateTreeNodes(childItem, node, ATree);
+    end;
+  end;
+end;
+
 function TFtFTMLHost.BuildWidgetTree(AItem: TFloriaFTMLItem; AParentWidget: TFtWidget): TFtWidget;
 var
   W: TFtWidget;
@@ -524,13 +689,22 @@ var
   childrenHandled: Boolean;
   tabItem, subItem: TFloriaFTMLItem;
   page: TFtTabPage;
-  pageWidget: TFtWidget;
+  pageWidget, w1, w2: TFtWidget;
   mi: TFtMenuItem;
   popup: TFtPopupMenu;
   win: TFtWindow;
   bridge: TFtFTMLSignalBridge;
   fnt, hintStr, clsStr, titleStr: string;
   opa: Double;
+  itemsVal: TFloriaJSValue;
+  itemsStr, kindStr, styleStr: string;
+  arr: TFloriaJSArray;
+  btnKind: TFtWindowButtonKind;
+  btnStyle: TFtWindowButtonStyle;
+  rulerOri: TFtRulerOrientation;
+  anchorMode: TFtAnchorMode;
+  textAlign: TFtTextAlign;
+  rowIdx: Integer;
 begin
   if AItem = nil then Exit(nil);
 
@@ -1076,6 +1250,397 @@ begin
       end;
     end;
   end
+  else if (AItem.TypeName = 'ComboBox') or (AItem.TypeName = 'DropDown') or (AItem.TypeName = 'Selector') then
+  begin
+    if iw <= 0 then iw := 160;
+    if ih <= 0 then ih := 32;
+    W := TFtComboBox.Create(AParentWidget, ix, iy, iw, ih);
+    ph := AItem.GetPropertyAsString('placeholder', '');
+    if ph <> '' then
+      TFtComboBox(W).Placeholder := ph;
+    if AItem.GetPropertyAsBoolean('editable', False) then
+      TFtComboBox(W).Editable := True;
+    rad := AItem.GetPropertyAsNumber('radius', AItem.GetPropertyAsNumber('cornerRadius', 0.0));
+    if rad > 0.0 then
+      TFtComboBox(W).CornerRadius := rad;
+
+    if AItem.HasProperty('items') then
+    begin
+      itemsVal := AItem.GetProperty('items');
+      if itemsVal.IsString() then
+      begin
+        itemsStr := itemsVal.ToString();
+        while itemsStr <> '' do
+        begin
+          j := Pos(',', itemsStr);
+          if j > 0 then
+          begin
+            TFtComboBox(W).AddItem(Trim(Copy(itemsStr, 1, j - 1)));
+            Delete(itemsStr, 1, j);
+          end
+          else
+          begin
+            TFtComboBox(W).AddItem(Trim(itemsStr));
+            itemsStr := '';
+          end;
+        end;
+      end
+      else if itemsVal.IsArray() then
+      begin
+        arr := itemsVal.AsArray();
+        for i := 0 to arr.Length() - 1 do
+          TFtComboBox(W).AddItem(arr.GetElement(i).ToString());
+      end;
+    end;
+
+    if AItem.ChildCount() > 0 then
+    begin
+      childrenHandled := True;
+      for i := 0 to AItem.ChildCount() - 1 do
+      begin
+        subItem := AItem.GetChild(i);
+        TFtComboBox(W).AddItem(subItem.GetPropertyAsString('text', subItem.GetPropertyAsString('value', '')));
+      end;
+    end;
+
+    curVal := AItem.GetPropertyAsNumber('selectedIndex', -1.0);
+    if curVal >= 0.0 then
+      TFtComboBox(W).SelectedIndex := Round(curVal);
+    txt := AItem.GetPropertyAsString('text', '');
+    if txt <> '' then
+      TFtComboBox(W).Text := txt;
+
+    AttachSignals(AItem, W);
+  end
+  else if (AItem.TypeName = 'PathBar') or (AItem.TypeName = 'BreadcrumbBar') then
+  begin
+    if iw <= 0 then
+    begin
+      if (AParentWidget <> nil) and (AParentWidget.Width > ix + 16) then
+        iw := AParentWidget.Width - ix - 16
+      else
+        iw := 300;
+    end;
+    if ih <= 0 then ih := 32;
+    txt := AItem.GetPropertyAsString('path', AItem.GetPropertyAsString('text', ''));
+    W := TFtPathBar.Create(AParentWidget, ix, iy, iw, ih, txt);
+    rad := AItem.GetPropertyAsNumber('radius', AItem.GetPropertyAsNumber('cornerRadius', 0.0));
+    if rad > 0.0 then
+      TFtPathBar(W).CornerRadius := rad;
+    if AItem.HasProperty('showEditButton') then
+      TFtPathBar(W).ShowEditButton := AItem.GetPropertyAsBoolean('showEditButton', True);
+    titleStr := AItem.GetPropertyAsString('rootDisplayName', '');
+    if titleStr <> '' then
+      TFtPathBar(W).RootDisplayName := titleStr;
+    kindStr := LowerCase(AItem.GetPropertyAsString('mode', 'breadcrumbs'));
+    if (kindStr = 'edit') or (kindStr = '1') then
+      TFtPathBar(W).Mode := ftpbmEdit
+    else
+      TFtPathBar(W).Mode := ftpbmBreadcrumbs;
+    AttachSignals(AItem, W);
+  end
+  else if AItem.TypeName = 'WindowButton' then
+  begin
+    if iw <= 0 then iw := 28;
+    if ih <= 0 then ih := 28;
+    kindStr := LowerCase(AItem.GetPropertyAsString('kind', 'close'));
+    btnKind := ftwbClose;
+    if (kindStr = 'minimize') or (kindStr = 'min') then btnKind := ftwbMinimize
+    else if (kindStr = 'maximize') or (kindStr = 'max') then btnKind := ftwbMaximize
+    else if kindStr = 'restore' then btnKind := ftwbRestore
+    else if kindStr = 'shade' then btnKind := ftwbShade
+    else if kindStr = 'pin' then btnKind := ftwbPin
+    else if kindStr = 'menu' then btnKind := ftwbMenu
+    else if kindStr = 'add' then btnKind := ftwbAdd;
+
+    styleStr := LowerCase(AItem.GetPropertyAsString('buttonStyle', 'squircle'));
+    btnStyle := ftwsSquircle;
+    if styleStr = 'circle' then btnStyle := ftwsCircle
+    else if (styleStr = 'square') or (styleStr = 'flat') then btnStyle := ftwsSquare;
+
+    W := TFtWindowButton.Create(AParentWidget, ix, iy, iw, ih, btnKind, btnStyle);
+    if AItem.HasProperty('glyphArm') then
+      TFtWindowButton(W).GlyphArm := AItem.GetPropertyAsNumber('glyphArm', 6.0);
+    if AItem.HasProperty('transitionDuration') then
+      TFtWindowButton(W).TransitionDuration := Round(AItem.GetPropertyAsNumber('transitionDuration', 150.0));
+    AttachSignals(AItem, W);
+  end
+  else if (AItem.TypeName = 'NumberScrubber') or (AItem.TypeName = 'Scrubber') then
+  begin
+    if iw <= 0 then iw := 140;
+    if ih <= 0 then ih := 28;
+    txt := AItem.GetPropertyAsString('label', AItem.GetPropertyAsString('text', ''));
+    W := TFtNumberScrubber.Create(AParentWidget, ix, iy, iw, ih, txt);
+    minVal := AItem.GetPropertyAsNumber('min', AItem.GetPropertyAsNumber('minValue', 0.0));
+    maxVal := AItem.GetPropertyAsNumber('max', AItem.GetPropertyAsNumber('maxValue', 100.0));
+    TFtNumberScrubber(W).SetRange(minVal, maxVal);
+    if AItem.HasProperty('decimals') then
+      TFtNumberScrubber(W).Decimals := Round(AItem.GetPropertyAsNumber('decimals', 0.0));
+    if AItem.HasProperty('step') then
+      TFtNumberScrubber(W).Step := AItem.GetPropertyAsNumber('step', 1.0);
+    curVal := AItem.GetPropertyAsNumber('value', minVal);
+    TFtNumberScrubber(W).Value := curVal;
+    if AItem.HasProperty('prefix') then
+      TFtNumberScrubber(W).Prefix := AItem.GetPropertyAsString('prefix', '');
+    if AItem.HasProperty('suffix') then
+      TFtNumberScrubber(W).Suffix := AItem.GetPropertyAsString('suffix', '');
+    AttachSignals(AItem, W);
+  end
+  else if AItem.TypeName = 'Ruler' then
+  begin
+    dirStr := LowerCase(AItem.GetPropertyAsString('orientation', 'horizontal'));
+    if dirStr = 'vertical' then
+    begin
+      rulerOri := ftroVertical;
+      if iw <= 0 then iw := 24;
+      if ih <= 0 then ih := 200;
+    end
+    else
+    begin
+      rulerOri := ftroHorizontal;
+      if iw <= 0 then iw := 200;
+      if ih <= 0 then ih := 24;
+    end;
+    W := TFtRuler.Create(AParentWidget, rulerOri, ix, iy, iw, ih);
+    kindStr := LowerCase(AItem.GetPropertyAsString('unit', 'pixels'));
+    if (kindStr = 'points') or (kindStr = 'pt') then
+      TFtRuler(W).UnitKind := ftruPoints
+    else if (kindStr = 'millimeters') or (kindStr = 'mm') then
+      TFtRuler(W).UnitKind := ftruMillimeters
+    else if (kindStr = 'centimeters') or (kindStr = 'cm') then
+      TFtRuler(W).UnitKind := ftruCentimeters
+    else if (kindStr = 'inches') or (kindStr = 'in') then
+      TFtRuler(W).UnitKind := ftruInches
+    else
+      TFtRuler(W).UnitKind := ftruPixels;
+    if AItem.HasProperty('thickness') then
+      TFtRuler(W).Thickness := Round(AItem.GetPropertyAsNumber('thickness', 24.0));
+    if AItem.HasProperty('showPointer') then
+      TFtRuler(W).ShowPointer := AItem.GetPropertyAsBoolean('showPointer', True);
+    if AItem.HasProperty('origin') or AItem.HasProperty('scale') then
+      TFtRuler(W).SetOriginAndScale(
+        AItem.GetPropertyAsNumber('origin', 0.0),
+        AItem.GetPropertyAsNumber('scale', 1.0));
+    if AItem.HasProperty('pointerPosition') then
+      TFtRuler(W).PointerPosition := AItem.GetPropertyAsNumber('pointerPosition', 0.0);
+    AttachSignals(AItem, W);
+  end
+  else if AItem.TypeName = 'FloatingBar' then
+  begin
+    if iw <= 0 then iw := 300;
+    if ih <= 0 then ih := 44;
+    kindStr := LowerCase(AItem.GetPropertyAsString('anchor', 'topcenter'));
+    anchorMode := ftamTopCenter;
+    if (kindStr = 'bottomcenter') or (kindStr = 'bottom') then anchorMode := ftamBottomCenter
+    else if kindStr = 'topleft' then anchorMode := ftamTopLeft
+    else if kindStr = 'topright' then anchorMode := ftamTopRight
+    else if kindStr = 'bottomleft' then anchorMode := ftamBottomLeft
+    else if kindStr = 'bottomright' then anchorMode := ftamBottomRight
+    else if kindStr = 'center' then anchorMode := ftamCenter;
+
+    W := TFtFloatingBar.Create(AParentWidget, anchorMode, iw, ih);
+    if AItem.HasProperty('autoAnchor') then
+      TFtFloatingBar(W).AutoAnchor := AItem.GetPropertyAsBoolean('autoAnchor', True);
+    if AItem.HasProperty('marginX') or AItem.HasProperty('marginY') then
+      TFtFloatingBar(W).SetMargins(
+        AItem.GetPropertyAsNumber('marginX', 0.0),
+        AItem.GetPropertyAsNumber('marginY', 0.0));
+    TFtFloatingBar(W).UpdateAnchor();
+  end
+  else if AItem.TypeName = 'FormGrid' then
+  begin
+    if (iw <= 0) and (AParentWidget <> nil) and (AParentWidget.Width > ix) then
+      iw := AParentWidget.Width - ix;
+    if (ih <= 0) and (AParentWidget <> nil) and (AParentWidget.Height > iy) then
+      ih := AParentWidget.Height - iy;
+    if iw <= 0 then iw := 400;
+    if ih <= 0 then ih := 250;
+    W := TFtFormGrid.Create(AParentWidget, ix, iy, iw, ih);
+    childrenHandled := True;
+    for i := 0 to AItem.ChildCount() - 1 do
+    begin
+      subItem := AItem.GetChild(i);
+      if (subItem.TypeName = 'FormRow') or (subItem.TypeName = 'Row') then
+      begin
+        titleStr := subItem.GetPropertyAsString('label', subItem.GetPropertyAsString('text', ''));
+        if subItem.ChildCount() >= 2 then
+        begin
+          w1 := BuildWidgetTree(subItem.GetChild(0), W);
+          w2 := BuildWidgetTree(subItem.GetChild(1), W);
+          TFtFormGrid(W).AddRowWidgets(w1, w2);
+        end
+        else if subItem.ChildCount() = 1 then
+        begin
+          w1 := BuildWidgetTree(subItem.GetChild(0), W);
+          TFtFormGrid(W).AddRow(titleStr, w1);
+        end
+        else
+          TFtFormGrid(W).AddRow(titleStr, nil);
+      end
+      else if subItem.TypeName = 'FormSection' then
+      begin
+        TFtFormGrid(W).AddSection(subItem.GetPropertyAsString('title', subItem.GetPropertyAsString('text', 'Section')));
+      end
+      else if subItem.TypeName = 'FormSpanned' then
+      begin
+        if subItem.ChildCount() > 0 then
+        begin
+          w1 := BuildWidgetTree(subItem.GetChild(0), W);
+          TFtFormGrid(W).AddSpanned(w1);
+        end;
+      end
+      else
+      begin
+        titleStr := subItem.GetPropertyAsString('label', '');
+        w1 := BuildWidgetTree(subItem, W);
+        if titleStr <> '' then
+          TFtFormGrid(W).AddRow(titleStr, w1)
+        else if subItem.GetPropertyAsBoolean('spanned', False) then
+          TFtFormGrid(W).AddSpanned(w1);
+      end;
+    end;
+  end
+  else if AItem.TypeName = 'TreeView' then
+  begin
+    if (iw <= 0) and (AParentWidget <> nil) and (AParentWidget.Width > ix) then
+      iw := AParentWidget.Width - ix;
+    if (ih <= 0) and (AParentWidget <> nil) and (AParentWidget.Height > iy) then
+      ih := AParentWidget.Height - iy;
+    if iw <= 0 then iw := 200;
+    if ih <= 0 then ih := 200;
+    W := TFtTreeView.Create(AParentWidget, ix, iy, iw, ih);
+    if AItem.HasProperty('itemHeight') then
+      TFtTreeView(W).ItemHeight := AItem.GetPropertyAsNumber('itemHeight', 24.0);
+    if AItem.HasProperty('indentWidth') then
+      TFtTreeView(W).IndentWidth := AItem.GetPropertyAsNumber('indentWidth', 16.0);
+    childrenHandled := True;
+    PopulateTreeNodes(AItem, nil, TFtTreeView(W));
+    AttachSignals(AItem, W);
+  end
+  else if (AItem.TypeName = 'Table') or (AItem.TypeName = 'TableView') then
+  begin
+    if (iw <= 0) and (AParentWidget <> nil) and (AParentWidget.Width > ix) then
+      iw := AParentWidget.Width - ix;
+    if (ih <= 0) and (AParentWidget <> nil) and (AParentWidget.Height > iy) then
+      ih := AParentWidget.Height - iy;
+    if iw <= 0 then iw := 300;
+    if ih <= 0 then ih := 200;
+    W := TFtTable.Create(AParentWidget, ix, iy, iw, ih);
+    if AItem.HasProperty('headerHeight') then
+      TFtTable(W).HeaderHeight := AItem.GetPropertyAsNumber('headerHeight', 28.0);
+    if AItem.HasProperty('rowHeight') then
+      TFtTable(W).RowHeight := AItem.GetPropertyAsNumber('rowHeight', 24.0);
+    if AItem.HasProperty('showGridlines') then
+      TFtTable(W).ShowGridlines := AItem.GetPropertyAsBoolean('showGridlines', True);
+    if AItem.HasProperty('zebraStriping') then
+      TFtTable(W).ZebraStriping := AItem.GetPropertyAsBoolean('zebraStriping', True);
+    if AItem.HasProperty('multiSelect') then
+      TFtTable(W).MultiSelect := AItem.GetPropertyAsBoolean('multiSelect', False);
+
+    childrenHandled := True;
+    for i := 0 to AItem.ChildCount() - 1 do
+    begin
+      subItem := AItem.GetChild(i);
+      if (subItem.TypeName = 'TableColumn') or (subItem.TypeName = 'Column') then
+      begin
+        titleStr := subItem.GetPropertyAsString('title', subItem.GetPropertyAsString('text', 'Column'));
+        padVal := subItem.GetPropertyAsNumber('width', 100.0);
+        alignStr := LowerCase(subItem.GetPropertyAsString('align', 'left'));
+        textAlign := ftaLeft;
+        if alignStr = 'center' then textAlign := ftaCenter
+        else if (alignStr = 'right') or (alignStr = 'end') then textAlign := ftaRight;
+        TFtTable(W).AddColumn(titleStr, padVal, textAlign);
+      end
+      else if (subItem.TypeName = 'TableRow') or (subItem.TypeName = 'Row') then
+      begin
+        rowIdx := TFtTable(W).AddRow();
+        for j := 0 to subItem.ChildCount() - 1 do
+        begin
+          tabItem := subItem.GetChild(j);
+          TFtTable(W).SetCell(rowIdx, j,
+            tabItem.GetPropertyAsString('text', tabItem.GetPropertyAsString('value', '')));
+        end;
+        if (subItem.ChildCount() = 0) and (subItem.HasProperty('cells') or subItem.HasProperty('values')) then
+        begin
+          itemsVal := subItem.GetProperty('cells');
+          if not itemsVal.IsArray() then
+            itemsVal := subItem.GetProperty('values');
+          if itemsVal.IsArray() then
+          begin
+            arr := itemsVal.AsArray();
+            for j := 0 to arr.Length() - 1 do
+              TFtTable(W).SetCell(rowIdx, j, arr.GetElement(j).ToString());
+          end;
+        end;
+      end;
+    end;
+
+    curVal := AItem.GetPropertyAsNumber('selectedRow', -1.0);
+    if curVal >= 0.0 then
+      TFtTable(W).SelectedRow := Round(curVal);
+
+    AttachSignals(AItem, W);
+  end
+  else if (AItem.TypeName = 'PopupMenu') or (AItem.TypeName = 'ContextMenu') then
+  begin
+    W := TFtPopupMenu.Create(AParentWidget);
+    rad := AItem.GetPropertyAsNumber('radius', AItem.GetPropertyAsNumber('cornerRadius', 0.0));
+    if rad > 0.0 then
+      TFtPopupMenu(W).CornerRadius := rad;
+    if (AParentWidget <> nil) and (AParentWidget <> Self) and (AParentWidget.ContextMenuHandle = nil) then
+      AParentWidget.ContextMenuHandle := W.Handle;
+    childrenHandled := True;
+    for i := 0 to AItem.ChildCount() - 1 do
+    begin
+      subItem := AItem.GetChild(i);
+      if subItem.TypeName = 'Separator' then
+        TFtPopupMenu(W).AddSeparator()
+      else if (subItem.TypeName = 'Menu') or (subItem.TypeName = 'SubMenu') then
+      begin
+        titleStr := subItem.GetPropertyAsString('title', subItem.GetPropertyAsString('text', 'SubMenu'));
+        popup := TFtPopupMenu.Create(W);
+        for j := 0 to subItem.ChildCount() - 1 do
+        begin
+          tabItem := subItem.GetChild(j);
+          if tabItem.TypeName = 'Separator' then
+            popup.AddSeparator()
+          else if (tabItem.TypeName = 'MenuItem') or (tabItem.TypeName = 'Action') then
+          begin
+            if tabItem.GetPropertyAsBoolean('checkable', False) then
+              mi := popup.AddCheckItem(
+                tabItem.GetPropertyAsString('text', ''),
+                tabItem.GetPropertyAsBoolean('checked', False))
+            else
+              mi := popup.AddItem(
+                tabItem.GetPropertyAsString('text', ''));
+            if tabItem.HasProperty('shortcut') then
+              mi.Shortcut := tabItem.GetPropertyAsString('shortcut', '');
+            bridge := TFtFTMLSignalBridge.Create(Self, tabItem);
+            FBridges.Add(bridge);
+            mi.OnClick := @bridge.HandleMenuItemClick;
+            AddMenuItemBinding(tabItem, mi);
+          end;
+        end;
+        TFtPopupMenu(W).AddSubMenu(titleStr, popup);
+      end
+      else if (subItem.TypeName = 'MenuItem') or (subItem.TypeName = 'Action') then
+      begin
+        if subItem.GetPropertyAsBoolean('checkable', False) then
+          mi := TFtPopupMenu(W).AddCheckItem(
+            subItem.GetPropertyAsString('text', ''),
+            subItem.GetPropertyAsBoolean('checked', False))
+        else
+          mi := TFtPopupMenu(W).AddItem(
+            subItem.GetPropertyAsString('text', ''));
+        if subItem.HasProperty('shortcut') then
+          mi.Shortcut := subItem.GetPropertyAsString('shortcut', '');
+        bridge := TFtFTMLSignalBridge.Create(Self, subItem);
+        FBridges.Add(bridge);
+        mi.OnClick := @bridge.HandleMenuItemClick;
+        AddMenuItemBinding(subItem, mi);
+      end;
+    end;
+  end
   else
   begin
     { Generic fallback container }
@@ -1349,11 +1914,13 @@ var
   i: Integer;
   item: TFloriaFTMLItem;
   W, curParent: TFtWidget;
-  curText, curColor, alignStr: string;
+  curText, curColor, alignStr, kindStr: string;
   curRad, curVal, cr, cg, cb, curFlexG: Double;
   curCheck, curVis, layoutNeeded: Boolean;
   newAlign: TFtAlignSelf;
   ix, iy, iw, ih: Integer;
+  btnKind: TFtWindowButtonKind;
+  anchorMode: TFtAnchorMode;
 begin
   if FIsSyncing then Exit;
   FIsSyncing := True;
@@ -1458,6 +2025,78 @@ begin
         curCheck := item.GetPropertyAsBoolean('bookmarked', False);
         if curCheck <> TFtUrlEntry(W).Bookmarked then
           TFtUrlEntry(W).Bookmarked := curCheck;
+      end
+      else if W is TFtComboBox then
+      begin
+        curVal := item.GetPropertyAsNumber('selectedIndex', -1.0);
+        if (curVal >= 0.0) and (Round(curVal) <> TFtComboBox(W).SelectedIndex) then
+          TFtComboBox(W).SelectedIndex := Round(curVal);
+        curText := item.GetPropertyAsString('text', '');
+        if (curText <> '') and (curText <> FBindings[i].LastText) then
+        begin
+          TFtComboBox(W).Text := curText;
+          FBindings[i].LastText := curText;
+        end;
+      end
+      else if W is TFtPathBar then
+      begin
+        curText := item.GetPropertyAsString('path', '');
+        if (curText <> '') and (curText <> FBindings[i].LastText) then
+        begin
+          TFtPathBar(W).Path := curText;
+          FBindings[i].LastText := curText;
+        end;
+      end
+      else if W is TFtNumberScrubber then
+      begin
+        curVal := item.GetPropertyAsNumber('value', TFtNumberScrubber(W).Value);
+        if curVal <> FBindings[i].LastValue then
+        begin
+          TFtNumberScrubber(W).Value := curVal;
+          FBindings[i].LastValue := curVal;
+        end;
+      end
+      else if W is TFtTable then
+      begin
+        curVal := item.GetPropertyAsNumber('selectedRow', -1.0);
+        if (curVal >= 0.0) and (Round(curVal) <> TFtTable(W).SelectedRow) then
+          TFtTable(W).SelectedRow := Round(curVal);
+      end
+      else if W is TFtFloatingBar then
+      begin
+        kindStr := LowerCase(item.GetPropertyAsString('anchor', ''));
+        if kindStr <> '' then
+        begin
+          anchorMode := ftamTopCenter;
+          if (kindStr = 'bottomcenter') or (kindStr = 'bottom') then anchorMode := ftamBottomCenter
+          else if kindStr = 'topleft' then anchorMode := ftamTopLeft
+          else if kindStr = 'topright' then anchorMode := ftamTopRight
+          else if kindStr = 'bottomleft' then anchorMode := ftamBottomLeft
+          else if kindStr = 'bottomright' then anchorMode := ftamBottomRight
+          else if kindStr = 'center' then anchorMode := ftamCenter;
+          if TFtFloatingBar(W).Anchor <> anchorMode then
+          begin
+            TFtFloatingBar(W).Anchor := anchorMode;
+            TFtFloatingBar(W).UpdateAnchor();
+          end;
+        end;
+      end
+      else if W is TFtWindowButton then
+      begin
+        kindStr := LowerCase(item.GetPropertyAsString('kind', ''));
+        if kindStr <> '' then
+        begin
+          btnKind := ftwbClose;
+          if (kindStr = 'minimize') or (kindStr = 'min') then btnKind := ftwbMinimize
+          else if (kindStr = 'maximize') or (kindStr = 'max') then btnKind := ftwbMaximize
+          else if kindStr = 'restore' then btnKind := ftwbRestore
+          else if kindStr = 'shade' then btnKind := ftwbShade
+          else if kindStr = 'pin' then btnKind := ftwbPin
+          else if kindStr = 'menu' then btnKind := ftwbMenu
+          else if kindStr = 'add' then btnKind := ftwbAdd;
+          if TFtWindowButton(W).Kind <> btnKind then
+            TFtWindowButton(W).Kind := btnKind;
+        end;
       end;
 
       // Child flex constraint sync
@@ -1487,7 +2126,9 @@ begin
       if W is TFtFlexBox then
         TFtFlexBox(W).UpdateLayout()
       else if W is TFtGrid then
-        TFtGrid(W).UpdateLayout();
+        TFtGrid(W).UpdateLayout()
+      else if W is TFtFloatingBar then
+        TFtFloatingBar(W).UpdateAnchor();
 
       // Geometry sync
       ix := Round(item.X);
@@ -1499,7 +2140,7 @@ begin
       begin
         if (iw > 0) and (ih > 0) then
         begin
-          if (W <> Self) and not ((W.Parent is TFtFlexBox) or (W.Parent is TFtGrid)) then
+          if (W <> Self) and not (W is TFtMainMenu) and not (W is TFtPopupMenu) and not ((W.Parent is TFtFlexBox) or (W.Parent is TFtGrid)) then
           begin
             if W is TFtMainMenu then
             begin
