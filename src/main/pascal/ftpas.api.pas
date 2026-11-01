@@ -1029,6 +1029,7 @@ var
   { Icon View }
   ft_icon_view_create: function(parent: TFtWidget; x, y, w, h: cint32): TFtIconView; cdecl;
   ft_icon_view_add_item: function(icon_view: TFtIconView; caption: PChar; icon: TFtBitmap): cint32; cdecl;
+  ft_icon_view_add_item_named: function(icon_view: TFtIconView; caption, icon_name: PChar): cint32; cdecl;
   ft_icon_view_insert_item: function(icon_view: TFtIconView; index: cint32; caption: PChar; icon: TFtBitmap): cint32; cdecl;
   ft_icon_view_delete_item: procedure(icon_view: TFtIconView; index: cint32); cdecl;
   ft_icon_view_clear: procedure(icon_view: TFtIconView); cdecl;
@@ -1039,6 +1040,8 @@ var
   ft_icon_view_set_item_subtext: procedure(icon_view: TFtIconView; index: cint32; subtext: PChar); cdecl;
   ft_icon_view_get_item_icon: function(icon_view: TFtIconView; index: cint32): TFtBitmap; cdecl;
   ft_icon_view_set_item_icon: procedure(icon_view: TFtIconView; index: cint32; icon: TFtBitmap); cdecl;
+  ft_icon_view_item_set_icon_name: procedure(icon_view: TFtIconView; index: cint32; icon_name: PChar); cdecl;
+  ft_icon_view_item_get_icon_name: function(icon_view: TFtIconView; index: cint32): PChar; cdecl;
   ft_icon_view_get_item_tag: function(icon_view: TFtIconView; index: cint32): cint32; cdecl;
   ft_icon_view_set_item_tag: procedure(icon_view: TFtIconView; index, tag: cint32); cdecl;
   ft_icon_view_get_item_data: function(icon_view: TFtIconView; index: cint32): Pointer; cdecl;
@@ -1055,6 +1058,8 @@ var
   ft_icon_view_get_selected_indices: function(icon_view: TFtIconView; out_indices: pcint32; max_count: cint32): cint32; cdecl;
   ft_icon_view_get_zoom_level: function(icon_view: TFtIconView): cint32; cdecl;
   ft_icon_view_set_zoom_level: procedure(icon_view: TFtIconView; level: cint32); cdecl;
+  ft_icon_view_zoom_in: procedure(icon_view: TFtIconView); cdecl;
+  ft_icon_view_zoom_out: procedure(icon_view: TFtIconView); cdecl;
   ft_icon_view_get_icon_size: function(icon_view: TFtIconView): cint32; cdecl;
   ft_icon_view_set_icon_size: procedure(icon_view: TFtIconView; size: cint32); cdecl;
   ft_icon_view_get_item_width: function(icon_view: TFtIconView): Double; cdecl;
@@ -1986,6 +1991,7 @@ begin
   { Bind Icon View }
   Pointer(ft_icon_view_create) := BindFunc('ft_icon_view_create');
   Pointer(ft_icon_view_add_item) := BindFunc('ft_icon_view_add_item');
+  Pointer(ft_icon_view_add_item_named) := BindFunc('ft_icon_view_add_item_named');
   Pointer(ft_icon_view_insert_item) := BindFunc('ft_icon_view_insert_item');
   Pointer(ft_icon_view_delete_item) := BindFunc('ft_icon_view_delete_item');
   Pointer(ft_icon_view_clear) := BindFunc('ft_icon_view_clear');
@@ -1996,6 +2002,8 @@ begin
   Pointer(ft_icon_view_set_item_subtext) := BindFunc('ft_icon_view_set_item_subtext');
   Pointer(ft_icon_view_get_item_icon) := BindFunc('ft_icon_view_get_item_icon');
   Pointer(ft_icon_view_set_item_icon) := BindFunc('ft_icon_view_set_item_icon');
+  Pointer(ft_icon_view_item_set_icon_name) := BindFunc('ft_icon_view_item_set_icon_name');
+  Pointer(ft_icon_view_item_get_icon_name) := BindFunc('ft_icon_view_item_get_icon_name');
   Pointer(ft_icon_view_get_item_tag) := BindFunc('ft_icon_view_get_item_tag');
   Pointer(ft_icon_view_set_item_tag) := BindFunc('ft_icon_view_set_item_tag');
   Pointer(ft_icon_view_get_item_data) := BindFunc('ft_icon_view_get_item_data');
@@ -2012,6 +2020,8 @@ begin
   Pointer(ft_icon_view_get_selected_indices) := BindFunc('ft_icon_view_get_selected_indices');
   Pointer(ft_icon_view_get_zoom_level) := BindFunc('ft_icon_view_get_zoom_level');
   Pointer(ft_icon_view_set_zoom_level) := BindFunc('ft_icon_view_set_zoom_level');
+  Pointer(ft_icon_view_zoom_in) := BindFunc('ft_icon_view_zoom_in');
+  Pointer(ft_icon_view_zoom_out) := BindFunc('ft_icon_view_zoom_out');
   Pointer(ft_icon_view_get_icon_size) := BindFunc('ft_icon_view_get_icon_size');
   Pointer(ft_icon_view_set_icon_size) := BindFunc('ft_icon_view_set_icon_size');
   Pointer(ft_icon_view_get_item_width) := BindFunc('ft_icon_view_get_item_width');

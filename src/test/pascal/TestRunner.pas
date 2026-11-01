@@ -647,15 +647,24 @@ begin
     iv.Subtexts[idx0] := '1.2 MB';
     idx1 := iv.AddItem('Photo.png');
     iv.Subtexts[idx1] := '3.4 MB';
+    iv.IconNames[idx1] := 'file-image';
 
     AssertEquals('IconView item count should be 2', 2, iv.ItemCount);
     AssertEquals('Item 0 caption should match', 'Document.pdf', iv.Captions[idx0]);
     AssertEquals('Item 0 subtext should match', '1.2 MB', iv.Subtexts[idx0]);
     AssertEquals('Item 1 caption should match', 'Photo.png', iv.Captions[idx1]);
+    AssertEquals('Item 1 icon name should match', 'file-image', iv.IconNames[idx1]);
 
     iv.ZoomLevel := ftizLarge;
     AssertEquals('ZoomLevel should be large', Ord(ftizLarge), Ord(iv.ZoomLevel));
     AssertEquals('Icon size for large should be 64', 64, iv.IconSize);
+
+    iv.ZoomIn();
+    AssertEquals('ZoomLevel should be huge after ZoomIn', Ord(ftizHuge), Ord(iv.ZoomLevel));
+    AssertEquals('Icon size for huge should be 96', 96, iv.IconSize);
+
+    iv.ZoomOut();
+    AssertEquals('ZoomLevel should be large after ZoomOut', Ord(ftizLarge), Ord(iv.ZoomLevel));
 
     iv.SelectedIndex := idx1;
     AssertEquals('Selected index should be 1', idx1, iv.SelectedIndex);

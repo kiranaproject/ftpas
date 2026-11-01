@@ -206,6 +206,8 @@ type
     procedure SetItemSubtext(AIndex: Integer; const ASubtext: string);
     function  GetItemIcon(AIndex: Integer): TFtBitmap;
     procedure SetItemIcon(AIndex: Integer; AIcon: TFtBitmap);
+    function  GetItemIconName(AIndex: Integer): string;
+    procedure SetItemIconName(AIndex: Integer; const AIconName: string);
     function  GetItemTag(AIndex: Integer): Integer;
     procedure SetItemTag(AIndex: Integer; ATag: Integer);
     function  GetItemData(AIndex: Integer): Pointer;
@@ -241,9 +243,13 @@ type
     constructor Create(AParent: TFtWidget; AX, AY, AW, AH: Integer); reintroduce;
 
     function  AddItem(const ACaption: string; AIcon: TFtBitmap = nil): Integer;
+    function  AddItemNamed(const ACaption, AIconName: string): Integer;
     function  InsertItem(AIndex: Integer; const ACaption: string; AIcon: TFtBitmap = nil): Integer;
     procedure DeleteItem(AIndex: Integer);
     procedure Clear();
+
+    procedure ZoomIn();
+    procedure ZoomOut();
 
     function  IsItemSelected(AIndex: Integer): Boolean;
     procedure SetItemSelected(AIndex: Integer; ASelected: Boolean);
@@ -256,6 +262,7 @@ type
     property Captions[AIndex: Integer]: string read GetItemCaption write SetItemCaption;
     property Subtexts[AIndex: Integer]: string read GetItemSubtext write SetItemSubtext;
     property Icons[AIndex: Integer]: TFtBitmap read GetItemIcon write SetItemIcon;
+    property IconNames[AIndex: Integer]: string read GetItemIconName write SetItemIconName;
     property Tags[AIndex: Integer]: Integer read GetItemTag write SetItemTag;
     property ItemDatas[AIndex: Integer]: Pointer read GetItemData write SetItemData;
 
@@ -983,6 +990,14 @@ begin
     Result := -1;
 end;
 
+function TFtIconView.AddItemNamed(const ACaption, AIconName: string): Integer;
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_add_item_named) then
+    Result := ft_icon_view_add_item_named(Handle, PChar(ACaption), PChar(AIconName))
+  else
+    Result := -1;
+end;
+
 function TFtIconView.InsertItem(AIndex: Integer; const ACaption: string; AIcon: TFtBitmap = nil): Integer;
 var
   bh: Pointer;
@@ -1081,6 +1096,37 @@ begin
   if AIcon <> nil then bh := AIcon.Handle else bh := nil;
   if (Handle <> nil) and Assigned(ft_icon_view_set_item_icon) then
     ft_icon_view_set_item_icon(Handle, AIndex, bh);
+end;
+
+function TFtIconView.GetItemIconName(AIndex: Integer): string;
+var
+  p: PChar;
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_item_get_icon_name) then
+  begin
+    p := ft_icon_view_item_get_icon_name(Handle, AIndex);
+    if p <> nil then Result := StrPas(p) else Result := '';
+  end
+  else
+    Result := '';
+end;
+
+procedure TFtIconView.SetItemIconName(AIndex: Integer; const AIconName: string);
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_item_set_icon_name) then
+    ft_icon_view_item_set_icon_name(Handle, AIndex, PChar(AIconName));
+end;
+
+procedure TFtIconView.ZoomIn();
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_zoom_in) then
+    ft_icon_view_zoom_in(Handle);
+end;
+
+procedure TFtIconView.ZoomOut();
+begin
+  if (Handle <> nil) and Assigned(ft_icon_view_zoom_out) then
+    ft_icon_view_zoom_out(Handle);
 end;
 
 function TFtIconView.GetItemTag(AIndex: Integer): Integer;
