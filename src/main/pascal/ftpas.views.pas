@@ -29,6 +29,7 @@ type
   TFtTreeNodeSelectEvent = procedure(Sender: TFtTreeView; Node: TFtTreeNode) of object;
   TFtTableRowSelectEvent = procedure(Sender: TFtTable; RowIndex: Integer) of object;
   TFtTableRowDblClickEvent = procedure(Sender: TFtTable; RowIndex: Integer) of object;
+  TFtTableColumnClickEvent = procedure(Sender: TFtTable; ColumnIndex: Integer) of object;
 
   { TFtTreeNode — Node inside TFtTreeView }
   TFtTreeNode = class
@@ -102,6 +103,7 @@ type
   private
     FOnSelectRow: TFtTableRowSelectEvent;
     FOnRowDoubleClick: TFtTableRowDblClickEvent;
+    FOnColumnClick: TFtTableColumnClickEvent;
 
     function  GetColumnCount: Integer;
     function  GetColumnTitle(AColIdx: Integer): string;
@@ -130,9 +132,11 @@ type
 
     procedure SetOnSelectRow(AValue: TFtTableRowSelectEvent);
     procedure SetOnRowDoubleClick(AValue: TFtTableRowDblClickEvent);
+    procedure SetOnColumnClick(AValue: TFtTableColumnClickEvent);
   protected
     procedure DoSelectRow(ARowIndex: Integer); virtual;
     procedure DoRowDoubleClick(ARowIndex: Integer); virtual;
+    procedure DoColumnClick(AColIndex: Integer); virtual;
   public
     constructor Create(AParent: TFtWidget; AX, AY, AW, AH: Integer); reintroduce;
 
@@ -180,6 +184,7 @@ type
 
     property OnSelectRow: TFtTableRowSelectEvent read FOnSelectRow write SetOnSelectRow;
     property OnRowDoubleClick: TFtTableRowDblClickEvent read FOnRowDoubleClick write SetOnRowDoubleClick;
+    property OnColumnClick: TFtTableColumnClickEvent read FOnColumnClick write SetOnColumnClick;
   end;
 
 implementation
@@ -211,6 +216,12 @@ procedure TableRowDblClickDispatcher(ATable: Pointer; ARowIndex: cint32; AUserDa
 begin
   if AUserData <> nil then
     TFtTable(AUserData).DoRowDoubleClick(ARowIndex);
+end;
+
+procedure TableColumnClickDispatcher(ATable: Pointer; AColIndex: cint32; AUserData: Pointer); cdecl;
+begin
+  if AUserData <> nil then
+    TFtTable(AUserData).DoColumnClick(AColIndex);
 end;
 
 { TFtTreeNode }
@@ -825,6 +836,19 @@ procedure TFtTable.DoRowDoubleClick(ARowIndex: Integer);
 begin
   if Assigned(FOnRowDoubleClick) then
     FOnRowDoubleClick(Self, ARowIndex);
+end;
+
+procedure TFtTable.SetOnColumnClick(AValue: TFtTableColumnClickEvent);
+begin
+  FOnColumnClick := AValue;
+  if (Handle <> nil) and Assigned(ft_table_on_column_click) then
+    ft_table_on_column_click(Handle, @TableColumnClickDispatcher, Self);
+end;
+
+procedure TFtTable.DoColumnClick(AColIndex: Integer);
+begin
+  if Assigned(FOnColumnClick) then
+    FOnColumnClick(Self, AColIndex);
 end;
 
 end.

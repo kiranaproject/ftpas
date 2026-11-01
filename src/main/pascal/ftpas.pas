@@ -116,6 +116,7 @@ type
   TFtTreeNode            = ftpas.views.TFtTreeNode;
   TFtTreeView            = ftpas.views.TFtTreeView;
   TFtTable               = ftpas.views.TFtTable;
+  TFtTableColumnClickEvent = ftpas.views.TFtTableColumnClickEvent;
 
   { Creative Suite }
   TFtDrawingArea         = ftpas.creative.TFtDrawingArea;

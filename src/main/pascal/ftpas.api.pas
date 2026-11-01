@@ -278,6 +278,7 @@ type
   TFtTreeNodeSelectCallback      = procedure(treeview: TFtTreeView; node: TFtTreeNode; user_data: Pointer); cdecl;
   TFtTableRowSelectCallback      = procedure(table: TFtTable; row_index: cint32; user_data: Pointer); cdecl;
   TFtTableRowDoubleClickCallback = procedure(table: TFtTable; row_index: cint32; user_data: Pointer); cdecl;
+  TFtTableColumnClickCallback    = procedure(table: TFtTable; column_index: cint32; user_data: Pointer); cdecl;
   TFtTableDrawHeaderCallback     = function(table: TFtTable; canvas: Pointer; col_idx: cint32; x, y, w, h: Double; sort_order: cint32; user_data: Pointer): cint32; cdecl;
   TFtTableDrawCellCallback       = function(table: TFtTable; canvas: Pointer; row_idx, col_idx: cint32; x, y, w, h: Double; is_selected, is_hovered: cint32; user_data: Pointer): cint32; cdecl;
   TFtDrawingPaintCallback        = procedure(widget: TFtWidget; canvas: TFtCanvas; user_data: Pointer); cdecl;
@@ -1001,6 +1002,7 @@ var
   ft_table_get_zebra_striping: function(table: TFtTable): cint32; cdecl;
   ft_table_on_select_row: procedure(table: TFtTable; callback: TFtTableRowSelectCallback; user_data: Pointer); cdecl;
   ft_table_on_row_double_click: procedure(table: TFtTable; callback: TFtTableRowDoubleClickCallback; user_data: Pointer); cdecl;
+  ft_table_on_column_click: procedure(table: TFtTable; callback: TFtTableColumnClickCallback; user_data: Pointer); cdecl;
   ft_table_on_draw_header: procedure(table: TFtTable; callback: TFtTableDrawHeaderCallback; user_data: Pointer); cdecl;
   ft_table_on_draw_cell: procedure(table: TFtTable; callback: TFtTableDrawCellCallback; user_data: Pointer); cdecl;
 
@@ -1908,6 +1910,7 @@ begin
   Pointer(ft_table_get_zebra_striping) := BindFunc('ft_table_get_zebra_striping');
   Pointer(ft_table_on_select_row) := BindFunc('ft_table_on_select_row');
   Pointer(ft_table_on_row_double_click) := BindFunc('ft_table_on_row_double_click');
+  Pointer(ft_table_on_column_click) := BindFunc('ft_table_on_column_click');
   Pointer(ft_table_on_draw_header) := BindFunc('ft_table_on_draw_header');
   Pointer(ft_table_on_draw_cell) := BindFunc('ft_table_on_draw_cell');
 
