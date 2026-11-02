@@ -118,6 +118,13 @@ type
     procedure SetIconSize(AWidth, AHeight: Integer);
     procedure GetIconSize(out AWidth, AHeight: Integer);
 
+    // Overlay painted by the caller after the button itself. The canvas is handed
+    // over as a raw pointer because that is what the C API passes; wrap it with
+    // TFtCanvas.Create to draw. Used for marks a child widget cannot draw reliably,
+    // such as a running indicator underneath a dock icon.
+    procedure SetOnPaint(AHandler: TFtButtonPaintCallback; AUserData: Pointer = nil);
+    procedure SetOnPaintIcon(AHandler: TFtButtonPaintCallback; AUserData: Pointer = nil);
+
     property Caption: string read GetCaption write SetCaption;
     property CornerRadius: Double read GetCornerRadius write SetCornerRadius;
     property Shadow: Boolean read GetShadow write SetShadow;
@@ -927,6 +934,20 @@ procedure TFtButton.SetIconSize(AWidth, AHeight: Integer);
 begin
   if (Handle <> nil) and Assigned(ft_button_set_icon_size) then
     ft_button_set_icon_size(Handle, AWidth, AHeight);
+end;
+
+// The C API stores the callback plus a user_data pointer. Passing Self as the
+// user_data means a handler can cast it back to the button.
+procedure TFtButton.SetOnPaint(AHandler: TFtButtonPaintCallback; AUserData: Pointer);
+begin
+  if (Handle <> nil) and Assigned(ft_button_on_paint) then
+    ft_button_on_paint(Handle, AHandler, AUserData);
+end;
+
+procedure TFtButton.SetOnPaintIcon(AHandler: TFtButtonPaintCallback; AUserData: Pointer);
+begin
+  if (Handle <> nil) and Assigned(ft_button_on_paint_icon) then
+    ft_button_on_paint_icon(Handle, AHandler, AUserData);
 end;
 
 procedure TFtButton.GetIconSize(out AWidth, AHeight: Integer);
