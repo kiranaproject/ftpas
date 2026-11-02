@@ -856,6 +856,7 @@ var
   ft_widget_get_style: function(widget: TFtWidget): PChar; cdecl;
   ft_style_load_css_file: function(filepath: PChar): cint32; cdecl;
   ft_style_load_css_string: function(css_string: PChar): cint32; cdecl;
+  ft_style_append_css_string: function(css_string: PChar): cint32; cdecl;
   ft_animation_is_running: function(): cint32; cdecl;
 
   { Bitmap & Images }
@@ -1820,6 +1821,7 @@ begin
   Pointer(ft_widget_get_style) := BindFunc('ft_widget_get_style');
   Pointer(ft_style_load_css_file) := BindFunc('ft_style_load_css_file');
   Pointer(ft_style_load_css_string) := BindFunc('ft_style_load_css_string');
+  Pointer(ft_style_append_css_string) := BindFunc('ft_style_append_css_string');
   Pointer(ft_animation_is_running) := BindFunc('ft_animation_is_running');
 
   { Bind Bitmaps & Images }
