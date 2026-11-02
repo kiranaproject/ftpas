@@ -332,6 +332,7 @@ var
   ft_window_set_window_type: procedure(window: TFtWidget; window_type: cint32); cdecl;
   ft_window_get_window_type: function(window: TFtWidget): cint32; cdecl;
   ft_window_set_position: procedure(window: TFtWidget; x, y: cint32); cdecl;
+  ft_window_set_size: procedure(window: TFtWidget; w, h: cint32); cdecl;
   ft_window_get_position: procedure(window: TFtWidget; out x, y: cint32); cdecl;
   ft_window_set_opacity: procedure(window: TFtWidget; opacity: Double); cdecl;
   ft_window_get_opacity: function(window: TFtWidget): Double; cdecl;
@@ -1300,6 +1301,7 @@ begin
   Pointer(ft_window_set_window_type) := BindFunc('ft_window_set_window_type');
   Pointer(ft_window_get_window_type) := BindFunc('ft_window_get_window_type');
   Pointer(ft_window_set_position) := BindFunc('ft_window_set_position');
+  Pointer(ft_window_set_size) := BindFunc('ft_window_set_size');
   Pointer(ft_window_get_position) := BindFunc('ft_window_get_position');
   Pointer(ft_window_set_opacity) := BindFunc('ft_window_set_opacity');
   Pointer(ft_window_get_opacity) := BindFunc('ft_window_get_opacity');

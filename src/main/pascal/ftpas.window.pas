@@ -100,6 +100,9 @@ type
     procedure Repaint();
 
     procedure SetPosition(AX, AY: Integer);
+    // Resize in place. Do not recreate a window to change its size: destroying
+    // it drops its strut and every maximized client expands into the gap.
+    procedure SetSize(AW, AH: Integer);
     procedure GetPosition(out AX, AY: Integer);
     procedure SetLayout(ALayout: TFtWidget);
     procedure SetDirectGPUMode(AEnable: Boolean);
@@ -332,6 +335,12 @@ procedure TFtWindow.SetPosition(AX, AY: Integer);
 begin
   if (Handle <> nil) and Assigned(ft_window_set_position) then
     ft_window_set_position(Handle, AX, AY);
+end;
+
+procedure TFtWindow.SetSize(AW, AH: Integer);
+begin
+  if (Handle <> nil) and Assigned(ft_window_set_size) then
+    ft_window_set_size(Handle, AW, AH);
 end;
 
 procedure TFtWindow.GetPosition(out AX, AY: Integer);
