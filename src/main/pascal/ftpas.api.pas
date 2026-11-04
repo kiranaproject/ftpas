@@ -353,6 +353,8 @@ var
   ft_window_bring_to_front: procedure(window: TFtWidget); cdecl;
   ft_window_grab_input: procedure(window: TFtWidget); cdecl;
   ft_window_ungrab_input: procedure(window: TFtWidget); cdecl;
+  ft_window_grab_popup_input: procedure(window: TFtWidget); cdecl;
+  ft_window_on_popup_dismiss: procedure(window: TFtWidget; callback: Pointer; user_data: Pointer); cdecl;
   ft_window_get_native_handle: function(window: TFtWidget): Pointer; cdecl;
   ft_window_set_layout: procedure(window, layout: TFtWidget); cdecl;
 
@@ -1323,6 +1325,8 @@ begin
   Pointer(ft_window_bring_to_front) := BindFunc('ft_window_bring_to_front');
   Pointer(ft_window_grab_input) := BindFunc('ft_window_grab_input');
   Pointer(ft_window_ungrab_input) := BindFunc('ft_window_ungrab_input');
+  Pointer(ft_window_grab_popup_input) := BindFunc('ft_window_grab_popup_input');
+  Pointer(ft_window_on_popup_dismiss) := BindFunc('ft_window_on_popup_dismiss');
   Pointer(ft_window_get_native_handle) := BindFunc('ft_window_get_native_handle');
   Pointer(ft_window_set_layout) := BindFunc('ft_window_set_layout');
 

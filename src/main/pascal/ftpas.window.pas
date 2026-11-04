@@ -31,6 +31,7 @@ type
   TFtWindowKeyEvent       = procedure(Sender: TFtWindow; AKey: LongWord; AIsDown: Boolean) of object;
   TFtWindowGLDrawEvent    = procedure(Sender: TFtWindow; AWidth, AHeight: Integer) of object;
   TFtWindowCloseEvent     = function(Sender: TFtWindow): Boolean of object;
+  TFtWindowPopupDismissEvent = procedure(Sender: TFtWindow) of object;
 
   { TFtWindow — High-level Window class }
   TFtWindow = class(TFtWidget)
@@ -43,6 +44,7 @@ type
     FOnKey: TFtWindowKeyEvent;
     FOnGLDraw: TFtWindowGLDrawEvent;
     FOnClose: TFtWindowCloseEvent;
+    FOnPopupDismiss: TFtWindowPopupDismissEvent;
     FExtendedClientArea: Boolean;
     FWindowControlsInset: TFtWindowControlsInset;
     FOnControlsInsetChanged: TFtWindowControlsInsetChangedEvent;
@@ -76,6 +78,7 @@ type
     procedure SetOnKey(AValue: TFtWindowKeyEvent);
     procedure SetOnGLDraw(AValue: TFtWindowGLDrawEvent);
     procedure SetOnClose(AValue: TFtWindowCloseEvent);
+    procedure SetOnPopupDismiss(AValue: TFtWindowPopupDismissEvent);
     procedure SetOnControlsInsetChanged(AValue: TFtWindowControlsInsetChangedEvent);
   protected
     procedure DoResize(ANewWidth, ANewHeight: Integer); virtual;
@@ -85,6 +88,7 @@ type
     procedure DoKey(AKey: LongWord; AIsDown: Boolean); virtual;
     procedure DoGLDraw(AWidth, AHeight: Integer); virtual;
     function  DoClose(): Boolean; virtual;
+    procedure DoPopupDismiss(); virtual;
     procedure DoControlsInsetChanged(const AInset: TFtWindowControlsInset); virtual;
   public
     constructor Create(); reintroduce; overload;
@@ -96,6 +100,9 @@ type
     function  ShowModal(): Integer;
     procedure BringToFront();
     procedure GrabInput();
+    // A grab that reports every pointer event to this window, including clicks on other
+    // windows of this application, so an outside click can close the popup.
+    procedure GrabPopupInput();
     procedure UngrabInput();
     procedure Repaint();
 
@@ -138,6 +145,7 @@ type
     property OnKey: TFtWindowKeyEvent read FOnKey write SetOnKey;
     property OnGLDraw: TFtWindowGLDrawEvent read FOnGLDraw write SetOnGLDraw;
     property OnClose: TFtWindowCloseEvent read FOnClose write SetOnClose;
+    property OnPopupDismiss: TFtWindowPopupDismissEvent read FOnPopupDismiss write SetOnPopupDismiss;
     property OnControlsInsetChanged: TFtWindowControlsInsetChangedEvent read FOnControlsInsetChanged write SetOnControlsInsetChanged;
   end;
 
@@ -317,6 +325,12 @@ procedure TFtWindow.GrabInput();
 begin
   if (Handle <> nil) and Assigned(ft_window_grab_input) then
     ft_window_grab_input(Handle);
+end;
+
+procedure TFtWindow.GrabPopupInput();
+begin
+  if (Handle <> nil) and Assigned(ft_window_grab_popup_input) then
+    ft_window_grab_popup_input(Handle);
 end;
 
 procedure TFtWindow.UngrabInput();
@@ -591,6 +605,19 @@ begin
     FOnGLDraw(Self, AWidth, AHeight);
 end;
 
+procedure PopupDismissDispatcher(AUserData: Pointer); cdecl;
+begin
+  if Assigned(AUserData) then
+    TFtWindow(AUserData).DoPopupDismiss();
+end;
+
+procedure TFtWindow.SetOnPopupDismiss(AValue: TFtWindowPopupDismissEvent);
+begin
+  FOnPopupDismiss := AValue;
+  if (Handle <> nil) and Assigned(ft_window_on_popup_dismiss) then
+    ft_window_on_popup_dismiss(Handle, @PopupDismissDispatcher, Pointer(Self));
+end;
+
 procedure TFtWindow.SetOnClose(AValue: TFtWindowCloseEvent);
 begin
   FOnClose := AValue;
@@ -601,6 +628,12 @@ end;
 procedure TFtWindow.SetOnControlsInsetChanged(AValue: TFtWindowControlsInsetChangedEvent);
 begin
   FOnControlsInsetChanged := AValue;
+end;
+
+procedure TFtWindow.DoPopupDismiss();
+begin
+  if Assigned(FOnPopupDismiss) then
+    FOnPopupDismiss(Self);
 end;
 
 function TFtWindow.DoClose(): Boolean;
