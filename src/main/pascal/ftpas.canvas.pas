@@ -69,6 +69,7 @@ type
     procedure DrawRoundedRect(X, Y, W, H, Radius: Double; R, G, B: Double; A: Double = 1.0); overload;
     procedure DrawRoundedRect(const ARect: TFtRect; Radius: Double; const AColor: TFtColor); overload;
     procedure DrawRoundedRectOutline(X, Y, W, H, Radius, BorderWidth: Double; R, G, B: Double; A: Double = 1.0); overload;
+    procedure DrawShadow(X, Y, W, H, Radius: Double; OffsetX, OffsetY, BlurRadius, ShadowR, ShadowG, ShadowB, ShadowOpacity: Double);
     procedure DrawLine(X1, Y1, X2, Y2, Width: Double; R, G, B: Double; A: Double = 1.0);
     procedure DrawCircle(CX, CY, Radius: Double; R, G, B: Double; A: Double = 1.0);
 
@@ -263,6 +264,36 @@ procedure TFtCanvas.DrawRoundedRectOutline(X, Y, W, H, Radius, BorderWidth: Doub
 begin
   if (FHandle <> nil) and Assigned(ft_canvas_draw_rounded_rect_outline) then
     ft_canvas_draw_rounded_rect_outline(FHandle, X, Y, W, H, Radius, BorderWidth, R, G, B, A);
+end;
+
+procedure TFtCanvas.DrawShadow(X, Y, W, H, Radius: Double; OffsetX, OffsetY, BlurRadius, ShadowR, ShadowG, ShadowB, ShadowOpacity: Double);
+var
+  steps, i: Integer;
+  expand, curR, stepAlpha: Double;
+begin
+  if (FHandle <> nil) and Assigned(ft_canvas_draw_shadow) then
+  begin
+    ft_canvas_draw_shadow(FHandle, X, Y, W, H, Radius, OffsetX, OffsetY, BlurRadius, ShadowR, ShadowG, ShadowB, ShadowOpacity);
+    Exit();
+  end;
+
+  // Fallback multi-pass rounded rect shadow when direct ABI call is unavailable
+  if (W <= 0) or (H <= 0) or (BlurRadius <= 0) or (ShadowOpacity <= 0) then Exit();
+  steps := Round(BlurRadius);
+  if steps < 1 then steps := 1;
+  if steps > 8 then steps := 8;
+
+  for i := steps downto 1 do
+  begin
+    expand := i * (BlurRadius / steps);
+    curR := Radius + (expand * 0.5);
+    stepAlpha := (ShadowOpacity / steps) * (1.0 - (i - 1) / (steps + 1));
+    if stepAlpha <= 0 then Continue;
+
+    DrawRoundedRect(X + OffsetX - expand * 0.5, Y + OffsetY - expand * 0.5,
+                   W + expand, H + expand, curR,
+                   ShadowR, ShadowG, ShadowB, stepAlpha);
+  end;
 end;
 
 procedure TFtCanvas.DrawLine(X1, Y1, X2, Y2, Width: Double; R, G, B: Double; A: Double = 1.0);

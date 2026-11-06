@@ -245,6 +245,7 @@ begin
     AssertNotNull('Canvas instance should exist', c);
     c.DrawRect(0, 0, 100, 100, 1.0, 0.0, 0.0, 1.0);
     c.DrawRoundedRect(10, 10, 80, 80, 4.0, 0.0, 1.0, 0.0, 1.0);
+    c.DrawShadow(10, 10, 80, 80, 4.0, 0.0, 2.0, 6.0, 0.0, 0.0, 0.0, 0.25);
     c.DrawLine(0, 0, 50, 50, 2.0, 0.0, 0.0, 1.0, 1.0);
     c.DrawCircle(25, 25, 10, 1.0, 1.0, 0.0, 1.0);
     c.PushClipRect(5, 5, 40, 40);

@@ -903,6 +903,7 @@ var
   ft_canvas_draw_rect: procedure(canvas: Pointer; x, y, w, h: cint32; r, g, b, a: Double); cdecl;
   ft_canvas_draw_rounded_rect: procedure(canvas: Pointer; x, y, w, h, radius, r, g, b, a: Double); cdecl;
   ft_canvas_draw_rounded_rect_outline: procedure(canvas: Pointer; x, y, w, h, radius, border_width, r, g, b, a: Double); cdecl;
+  ft_canvas_draw_shadow: procedure(canvas: Pointer; x, y, w, h, radius, offset_x, offset_y, blur_radius, shadow_r, shadow_g, shadow_b, shadow_opacity: Double); cdecl;
   ft_canvas_draw_line: procedure(canvas: Pointer; x1, y1, x2, y2, width, r, g, b, a: Double); cdecl;
   ft_canvas_draw_circle: procedure(canvas: Pointer; cx, cy, radius, r, g, b, a: Double); cdecl;
   ft_canvas_draw_text: procedure(canvas: Pointer; x, y: Double; text: PChar; font: Pointer; r, g, b: Double); cdecl;
@@ -1869,6 +1870,7 @@ begin
   Pointer(ft_canvas_draw_rect) := BindFunc('ft_canvas_draw_rect');
   Pointer(ft_canvas_draw_rounded_rect) := BindFunc('ft_canvas_draw_rounded_rect');
   Pointer(ft_canvas_draw_rounded_rect_outline) := BindFunc('ft_canvas_draw_rounded_rect_outline');
+  Pointer(ft_canvas_draw_shadow) := BindFunc('ft_canvas_draw_shadow');
   Pointer(ft_canvas_draw_line) := BindFunc('ft_canvas_draw_line');
   Pointer(ft_canvas_draw_circle) := BindFunc('ft_canvas_draw_circle');
   Pointer(ft_canvas_draw_text) := BindFunc('ft_canvas_draw_text');
