@@ -967,6 +967,8 @@ begin
       ih := 26;
 
     W := TFtLabel.Create(AParentWidget, ix, iy, iw, ih, txt);
+    if AItem.HasProperty('selectable') then
+      TFtLabel(W).Selectable := AItem.GetPropertyAsBoolean('selectable', True);
     colorStr := AItem.GetPropertyAsString('color');
     if colorStr <> '' then
     begin
