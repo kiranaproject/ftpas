@@ -981,6 +981,10 @@ var
   ft_treenode_get_expanded: function(node: TFtTreeNode): cint32; cdecl;
   ft_treenode_set_icon: procedure(node: TFtTreeNode; icon: TFtBitmap); cdecl;
   ft_treenode_get_icon: function(node: TFtTreeNode): TFtBitmap; cdecl;
+  ft_treenode_set_icon_selected: procedure(node: TFtTreeNode; icon: TFtBitmap); cdecl;
+  ft_treenode_get_icon_selected: function(node: TFtTreeNode): TFtBitmap; cdecl;
+  ft_treenode_set_is_header: procedure(node: TFtTreeNode; is_header: cint32); cdecl;
+  ft_treenode_get_is_header: function(node: TFtTreeNode): cint32; cdecl;
   ft_treenode_set_data: procedure(node: TFtTreeNode; data: Pointer); cdecl;
   ft_treenode_get_data: function(node: TFtTreeNode): Pointer; cdecl;
   ft_treenode_set_tag: procedure(node: TFtTreeNode; tag: cint32); cdecl;
@@ -1948,6 +1952,10 @@ begin
   Pointer(ft_treenode_get_expanded) := BindFunc('ft_treenode_get_expanded');
   Pointer(ft_treenode_set_icon) := BindFunc('ft_treenode_set_icon');
   Pointer(ft_treenode_get_icon) := BindFunc('ft_treenode_get_icon');
+  Pointer(ft_treenode_set_icon_selected) := BindFunc('ft_treenode_set_icon_selected');
+  Pointer(ft_treenode_get_icon_selected) := BindFunc('ft_treenode_get_icon_selected');
+  Pointer(ft_treenode_set_is_header) := BindFunc('ft_treenode_set_is_header');
+  Pointer(ft_treenode_get_is_header) := BindFunc('ft_treenode_get_is_header');
   Pointer(ft_treenode_set_data) := BindFunc('ft_treenode_set_data');
   Pointer(ft_treenode_get_data) := BindFunc('ft_treenode_get_data');
   Pointer(ft_treenode_set_tag) := BindFunc('ft_treenode_set_tag');

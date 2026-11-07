@@ -693,7 +693,7 @@ var
   k: Integer;
   childItem: TFloriaFTMLItem;
   node: TFtTreeNode;
-  nodeText: string;
+  nodeText, iconName: string;
 begin
   for k := 0 to AItem.ChildCount() - 1 do
   begin
@@ -707,6 +707,21 @@ begin
         node := AParentNode.AddChild(nodeText);
       if childItem.HasProperty('expanded') then
         node.Expanded := childItem.GetPropertyAsBoolean('expanded', True);
+      if childItem.HasProperty('isHeader') then
+        node.IsHeader := childItem.GetPropertyAsBoolean('isHeader', False);
+
+      if childItem.HasProperty('icon') then
+      begin
+        iconName := childItem.GetPropertyAsString('icon', '');
+        node.Icon := FtApp().GetIconBitmap(iconName, 16, 16, False);
+        if childItem.HasProperty('iconSelected') then
+          node.IconSelected := FtApp().GetIconBitmap(childItem.GetPropertyAsString('iconSelected', ''), 16, 16, False)
+        else if FtApp().HasIcon(iconName + '-white') then
+          node.IconSelected := FtApp().GetIconBitmap(iconName + '-white', 16, 16, False);
+      end
+      else if childItem.HasProperty('iconSelected') then
+        node.IconSelected := FtApp().GetIconBitmap(childItem.GetPropertyAsString('iconSelected', ''), 16, 16, False);
+
       PopulateTreeNodes(childItem, node, ATree);
     end;
   end;

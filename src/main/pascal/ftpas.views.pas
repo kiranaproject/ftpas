@@ -53,6 +53,10 @@ type
     procedure SetTag(AValue: Integer);
     function  GetData: Pointer;
     procedure SetData(AValue: Pointer);
+    function  GetIsHeader: Boolean;
+    procedure SetIsHeader(AValue: Boolean);
+    function  GetIconSelected: TFtBitmap;
+    procedure SetIconSelected(ABitmap: TFtBitmap);
   public
     constructor Wrap(AHandle: Pointer; AOwnsHandle: Boolean = False);
     destructor Destroy; override;
@@ -65,6 +69,9 @@ type
     property Handle: Pointer read FHandle;
     property Text: string read GetText write SetText;
     property Expanded: Boolean read GetExpanded write SetExpanded;
+    property IsHeader: Boolean read GetIsHeader write SetIsHeader;
+    property Icon: TFtBitmap read GetIcon write SetIcon;
+    property IconSelected: TFtBitmap read GetIconSelected write SetIconSelected;
     property ChildCount: Integer read GetChildCount;
     property Children[AIndex: Integer]: TFtTreeNode read GetChild;
     property Parent: TFtTreeNode read GetParent;
@@ -492,6 +499,48 @@ begin
   end
   else
     Result := nil;
+end;
+
+procedure TFtTreeNode.SetIconSelected(ABitmap: TFtBitmap);
+var
+  bh: Pointer;
+begin
+  if ABitmap <> nil then bh := ABitmap.Handle else bh := nil;
+  if (FHandle <> nil) and Assigned(ft_treenode_set_icon_selected) then
+    ft_treenode_set_icon_selected(FHandle, bh);
+end;
+
+function TFtTreeNode.GetIconSelected(): TFtBitmap;
+var
+  bh: Pointer;
+begin
+  if (FHandle <> nil) and Assigned(ft_treenode_get_icon_selected) then
+  begin
+    bh := ft_treenode_get_icon_selected(FHandle);
+    if bh <> nil then
+      Result := TFtBitmap.Wrap(bh, False)
+    else
+      Result := nil;
+  end
+  else
+    Result := nil;
+end;
+
+procedure TFtTreeNode.SetIsHeader(AValue: Boolean);
+var
+  v: cint32;
+begin
+  if AValue then v := 1 else v := 0;
+  if (FHandle <> nil) and Assigned(ft_treenode_set_is_header) then
+    ft_treenode_set_is_header(FHandle, v);
+end;
+
+function TFtTreeNode.GetIsHeader(): Boolean;
+begin
+  if (FHandle <> nil) and Assigned(ft_treenode_get_is_header) then
+    Result := ft_treenode_get_is_header(FHandle) <> 0
+  else
+    Result := False;
 end;
 
 { TFtTreeView }
