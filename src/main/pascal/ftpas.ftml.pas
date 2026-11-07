@@ -1236,6 +1236,12 @@ begin
     if ih <= 0 then ih := 64;
     W := TFtImage.Create(AParentWidget, ix, iy, iw, ih,
       AItem.GetPropertyAsString('src', AItem.GetPropertyAsString('file', '')));
+    if AItem.HasProperty('icon') then
+    begin
+      kindStr := AItem.GetPropertyAsString('icon');
+      if FtApp().HasIcon(kindStr) then
+        TFtImage(W).LoadSVGString(FtApp().GetIconSvg(kindStr, FtApp().DarkMode));
+    end;
   end
   else if AItem.TypeName = 'ScrollBar' then
   begin
