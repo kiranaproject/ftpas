@@ -284,6 +284,7 @@ type
   TFtCheckCallback               = procedure(widget: TFtWidget; checked: cint32; user_data: Pointer); cdecl;
   TFtRadioCallback               = procedure(widget: TFtWidget; checked: cint32; user_data: Pointer); cdecl;
   TFtComboChangeCallback         = procedure(widget: TFtWidget; selected_index: cint32; text: PChar; user_data: Pointer); cdecl;
+  TFtSegmentSelectCallback       = procedure(widget: TFtWidget; selected_index: cint32; text: PChar; user_data: Pointer); cdecl;
   TFtSliderChangeCallback        = procedure(widget: TFtWidget; value: Double; user_data: Pointer); cdecl;
   TFtMenuCallback                = procedure(item: TFtMenuItem; user_data: Pointer); cdecl;
   TFtTabChangeCallback           = procedure(notebook: TFtNotebook; new_index, old_index: cint32; user_data: Pointer); cdecl;
@@ -736,6 +737,22 @@ var
   ft_combobox_get_corner_radius: function(combobox: TFtWidget): Double; cdecl;
   ft_combobox_popup: procedure(combobox: TFtWidget); cdecl;
   ft_combobox_on_change: procedure(combobox: TFtWidget; callback: TFtComboChangeCallback; user_data: Pointer); cdecl;
+
+  { SegmentedControl }
+  ft_segmented_control_create: function(parent: TFtWidget; x, y, w, h: cint32): TFtWidget; cdecl;
+  ft_segmented_control_add_segment: function(control: TFtWidget; text, icon: PChar): cint32; cdecl;
+  ft_segmented_control_clear: procedure(control: TFtWidget); cdecl;
+  ft_segmented_control_get_count: function(control: TFtWidget): cint32; cdecl;
+  ft_segmented_control_set_selected_index: procedure(control: TFtWidget; index: cint32); cdecl;
+  ft_segmented_control_get_selected_index: function(control: TFtWidget): cint32; cdecl;
+  ft_segmented_control_get_selected_text: function(control: TFtWidget): PChar; cdecl;
+  ft_segmented_control_get_segment_text: function(control: TFtWidget; index: cint32): PChar; cdecl;
+  ft_segmented_control_set_segment_text: procedure(control: TFtWidget; index: cint32; text: PChar); cdecl;
+  ft_segmented_control_set_items_text: procedure(control: TFtWidget; text: PChar); cdecl;
+  ft_segmented_control_set_corner_radius: procedure(control: TFtWidget; radius: Double); cdecl;
+  ft_segmented_control_get_corner_radius: function(control: TFtWidget): Double; cdecl;
+  ft_segmented_control_attach_notebook: procedure(control, notebook: TFtWidget); cdecl;
+  ft_segmented_control_on_select: procedure(control: TFtWidget; callback: TFtSegmentSelectCallback; user_data: Pointer); cdecl;
 
   { Slider }
   ft_slider_create: function(parent: TFtWidget; x, y, w, h, orientation: cint32): TFtWidget; cdecl;
@@ -1713,6 +1730,22 @@ begin
   Pointer(ft_combobox_get_corner_radius) := BindFunc('ft_combobox_get_corner_radius');
   Pointer(ft_combobox_popup) := BindFunc('ft_combobox_popup');
   Pointer(ft_combobox_on_change) := BindFunc('ft_combobox_on_change');
+
+  { Bind SegmentedControl }
+  Pointer(ft_segmented_control_create) := BindFunc('ft_segmented_control_create');
+  Pointer(ft_segmented_control_add_segment) := BindFunc('ft_segmented_control_add_segment');
+  Pointer(ft_segmented_control_clear) := BindFunc('ft_segmented_control_clear');
+  Pointer(ft_segmented_control_get_count) := BindFunc('ft_segmented_control_get_count');
+  Pointer(ft_segmented_control_set_selected_index) := BindFunc('ft_segmented_control_set_selected_index');
+  Pointer(ft_segmented_control_get_selected_index) := BindFunc('ft_segmented_control_get_selected_index');
+  Pointer(ft_segmented_control_get_selected_text) := BindFunc('ft_segmented_control_get_selected_text');
+  Pointer(ft_segmented_control_get_segment_text) := BindFunc('ft_segmented_control_get_segment_text');
+  Pointer(ft_segmented_control_set_segment_text) := BindFunc('ft_segmented_control_set_segment_text');
+  Pointer(ft_segmented_control_set_items_text) := BindFunc('ft_segmented_control_set_items_text');
+  Pointer(ft_segmented_control_set_corner_radius) := BindFunc('ft_segmented_control_set_corner_radius');
+  Pointer(ft_segmented_control_get_corner_radius) := BindFunc('ft_segmented_control_get_corner_radius');
+  Pointer(ft_segmented_control_attach_notebook) := BindFunc('ft_segmented_control_attach_notebook');
+  Pointer(ft_segmented_control_on_select) := BindFunc('ft_segmented_control_on_select');
 
   { Bind Slider }
   Pointer(ft_slider_create) := BindFunc('ft_slider_create');

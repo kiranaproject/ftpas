@@ -1422,8 +1422,9 @@ end;
 procedure TFTMLIntegrationTest.TestFTMLRemainingWidgetsDeclarative();
 var
   win: TFtFTMLWindow;
-  cbW, pbW, wbW, scW, ruW, fbW, fgW, tvW, tbW, pmW, ueW: TFtWidget;
+  cbW, pbW, wbW, scW, ruW, fbW, fgW, tvW, tbW, pmW, ueW, segW: TFtWidget;
   cb: TFtComboBox;
+  seg: TFtSegmentedControl;
   pb: TFtPathBar;
   wb: TFtWindowButton;
   sc: TFtNumberScrubber;
@@ -1450,6 +1451,12 @@ const
     '    Item { text: "Alpha"; }' + LineEnding +
     '    Item { text: "Beta"; }' + LineEnding +
     '    Item { text: "Gamma"; }' + LineEnding +
+    '  }' + LineEnding +
+    '' + LineEnding +
+    '  SegmentedControl {' + LineEnding +
+    '    id: mySegCtrl;' + LineEnding +
+    '    items: "100%, 125%, 150%, 175%, 200%";' + LineEnding +
+    '    selectedIndex: 2;' + LineEnding +
     '  }' + LineEnding +
     '' + LineEnding +
     '  PathBar {' + LineEnding +
@@ -1549,6 +1556,15 @@ begin
     AssertEquals('SelectedIndex is 1', 1, cb.SelectedIndex);
     AssertEquals('Item 0 is Alpha', 'Alpha', cb.Items[0]);
     AssertEquals('Item 1 is Beta', 'Beta', cb.Items[1]);
+
+    // SegmentedControl
+    segW := win.FindWidget('mySegCtrl');
+    AssertNotNull('SegmentedControl found', segW);
+    AssertTrue('is TFtSegmentedControl', segW is TFtSegmentedControl);
+    seg := TFtSegmentedControl(segW);
+    AssertEquals('SegmentCount is 5', 5, seg.SegmentCount);
+    AssertEquals('SelectedIndex is 2', 2, seg.SelectedIndex);
+    AssertEquals('SelectedText is 150%', '150%', seg.SelectedText);
 
     // 2. PathBar
     pbW := win.FindWidget('myPathBar');

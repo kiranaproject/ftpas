@@ -77,6 +77,7 @@ type
     procedure HandleUrlSecurityClick(Sender: TFtUrlEntry; SecurityState: TFtUrlSecurityState);
     procedure HandleUrlBookmarkClick(Sender: TFtUrlEntry; Bookmarked: Boolean);
     procedure HandleComboBoxChange(Sender: TFtComboBox; SelectedIndex: Integer; const Text: string);
+    procedure HandleSegmentSelect(Sender: TFtSegmentedControl; SelectedIndex: Integer; const Text: string);
     procedure HandlePathNavigate(Sender: TFtPathBar; const Path: string);
     procedure HandlePathModeChange(Sender: TFtPathBar; Mode: TFtPathBarMode);
     procedure HandleWindowButtonClick(Sender: TFtWindowButton);
@@ -324,6 +325,19 @@ begin
     FItem.SetProperty('text', JSMakeString(Text));
     FHost.EmitItemSignal(FItem, 'change');
     FHost.EmitItemSignal(FItem, 'changed');
+    FHost.SyncProperties();
+  end;
+end;
+
+procedure TFtFTMLSignalBridge.HandleSegmentSelect(Sender: TFtSegmentedControl; SelectedIndex: Integer; const Text: string);
+begin
+  if (FHost <> nil) and (FItem <> nil) and not FHost.FIsSyncing then
+  begin
+    FItem.SetProperty('selectedIndex', JSMakeNumber(SelectedIndex));
+    FItem.SetProperty('selectedText', JSMakeString(Text));
+    FHost.EmitItemSignal(FItem, 'select');
+    FHost.EmitItemSignal(FItem, 'selected');
+    FHost.EmitItemSignal(FItem, 'change');
     FHost.SyncProperties();
   end;
 end;
@@ -617,6 +631,10 @@ begin
   else if AWidget is TFtComboBox then
   begin
     TFtComboBox(AWidget).OnChange := @bridge.HandleComboBoxChange;
+  end
+  else if AWidget is TFtSegmentedControl then
+  begin
+    TFtSegmentedControl(AWidget).OnSelect := @bridge.HandleSegmentSelect;
   end
   else if AWidget is TFtPathBar then
   begin
@@ -1410,6 +1428,50 @@ begin
     txt := AItem.GetPropertyAsString('text', '');
     if txt <> '' then
       TFtComboBox(W).Text := txt;
+
+    AttachSignals(AItem, W);
+  end
+  else if (AItem.TypeName = 'SegmentedControl') or (AItem.TypeName = 'SegmentedButton') or (AItem.TypeName = 'ViewSwitcher') then
+  begin
+    if iw <= 0 then iw := 200;
+    if ih <= 0 then ih := 34;
+    W := TFtSegmentedControl.Create(AParentWidget, ix, iy, iw, ih);
+    rad := AItem.GetPropertyAsNumber('radius', AItem.GetPropertyAsNumber('cornerRadius', 0.0));
+    if rad > 0.0 then
+      TFtSegmentedControl(W).CornerRadius := rad;
+
+    itemsStr := AItem.GetPropertyAsString('items', '');
+    if itemsStr <> '' then
+    begin
+      TFtSegmentedControl(W).ItemsText := itemsStr;
+    end
+    else if AItem.HasProperty('items') then
+    begin
+      itemsVal := AItem.GetProperty('items');
+      if itemsVal.IsArray() then
+      begin
+        arr := itemsVal.AsArray();
+        for i := 0 to arr.Length() - 1 do
+          TFtSegmentedControl(W).AddSegment(arr.GetElement(i).ToString());
+      end;
+    end;
+
+    if AItem.ChildCount() > 0 then
+    begin
+      childrenHandled := True;
+      for i := 0 to AItem.ChildCount() - 1 do
+      begin
+        subItem := AItem.GetChild(i);
+        TFtSegmentedControl(W).AddSegment(
+          subItem.GetPropertyAsString('text', subItem.GetPropertyAsString('value', '')),
+          subItem.GetPropertyAsString('icon', '')
+        );
+      end;
+    end;
+
+    curVal := AItem.GetPropertyAsNumber('selectedIndex', -1.0);
+    if curVal >= 0.0 then
+      TFtSegmentedControl(W).SelectedIndex := Round(curVal);
 
     AttachSignals(AItem, W);
   end

@@ -38,6 +38,7 @@ type
   TFtScrollBar = class;
   TFtPathBar = class;
   TFtUrlEntry = class;
+  TFtSegmentedControl = class;
 
   { Event Signatures }
   TFtButtonClickEvent     = procedure(Sender: TFtButton) of object;
@@ -57,6 +58,7 @@ type
   TFtTextSubmitEvent     = procedure(Sender: TFtWidget; const Text: string) of object;
 
   TFtComboChangeEvent    = procedure(Sender: TFtComboBox; SelectedIndex: Integer; const Text: string) of object;
+  TFtSegmentSelectEvent  = procedure(Sender: TFtSegmentedControl; SelectedIndex: Integer; const Text: string) of object;
   TFtSliderChangeEvent   = procedure(Sender: TFtSlider; Value: Double) of object;
   TFtScrollEvent         = procedure(Sender: TFtWidget; Value: Double) of object;
 
@@ -394,6 +396,41 @@ type
     property OnChange: TFtComboChangeEvent read FOnChange write SetOnChange;
   end;
 
+  { TFtSegmentedControl — Multi-segment option and view switcher }
+  TFtSegmentedControl = class(TFtWidget)
+  private
+    FOnSelect: TFtSegmentSelectEvent;
+
+    function  GetSegmentCount: Integer;
+    function  GetSelectedIndex: Integer;
+    procedure SetSelectedIndex(AIndex: Integer);
+    function  GetSelectedText: string;
+    function  GetCornerRadius: Double;
+    procedure SetCornerRadius(AValue: Double);
+    function  GetItemsText: string;
+    procedure SetItemsText(const AValue: string);
+    procedure SetOnSelect(AValue: TFtSegmentSelectEvent);
+  protected
+    procedure DoSelect(AIndex: Integer; const AText: string); virtual;
+  public
+    constructor Create(AParent: TFtWidget); override;
+    constructor Create(AParent: TFtWidget; AX, AY, AW, AH: Integer); reintroduce;
+
+    function  AddSegment(const AText: string; const AIcon: string = ''): Integer;
+    procedure Clear();
+    function  GetSegmentText(AIndex: Integer): string;
+    procedure SetSegmentText(AIndex: Integer; const AText: string);
+    procedure AttachToNotebook(ANotebook: TFtWidget);
+
+    property SegmentCount: Integer read GetSegmentCount;
+    property SelectedIndex: Integer read GetSelectedIndex write SetSelectedIndex;
+    property SelectedText: string read GetSelectedText;
+    property ItemsText: string read GetItemsText write SetItemsText;
+    property CornerRadius: Double read GetCornerRadius write SetCornerRadius;
+
+    property OnSelect: TFtSegmentSelectEvent read FOnSelect write SetOnSelect;
+  end;
+
   { TFtSlider — Horizontal and vertical track slider }
   TFtSlider = class(TFtWidget)
   private
@@ -683,6 +720,12 @@ procedure ComboChangeDispatcher(AWidget: Pointer; AIndex: cint32; AText: PChar; 
 begin
   if AUserData <> nil then
     TFtComboBox(AUserData).DoChange(AIndex, StrPas(AText));
+end;
+
+procedure SegmentSelectDispatcher(AWidget: Pointer; AIndex: cint32; AText: PChar; AUserData: Pointer); cdecl;
+begin
+  if AUserData <> nil then
+    TFtSegmentedControl(AUserData).DoSelect(AIndex, StrPas(AText));
 end;
 
 procedure SliderChangeDispatcher(AWidget: Pointer; AValue: Double; AUserData: Pointer); cdecl;
@@ -1840,6 +1883,143 @@ procedure TFtComboBox.DoChange(AIndex: Integer; const AText: string);
 begin
   if Assigned(FOnChange) then
     FOnChange(Self, AIndex, AText);
+end;
+
+{ TFtSegmentedControl }
+
+constructor TFtSegmentedControl.Create(AParent: TFtWidget);
+begin
+  Create(AParent, 0, 0, 200, 34);
+end;
+
+constructor TFtSegmentedControl.Create(AParent: TFtWidget; AX, AY, AW, AH: Integer);
+var
+  pHandle, h: Pointer;
+begin
+  inherited Create(AParent);
+  if AParent <> nil then pHandle := AParent.Handle else pHandle := nil;
+  if Assigned(ft_segmented_control_create) then
+    h := ft_segmented_control_create(pHandle, AX, AY, AW, AH)
+  else
+    h := nil;
+  SetHandle(h, True);
+  if (Handle <> nil) and Assigned(ft_segmented_control_on_select) then
+    ft_segmented_control_on_select(Handle, @SegmentSelectDispatcher, Self);
+end;
+
+function TFtSegmentedControl.AddSegment(const AText: string; const AIcon: string): Integer;
+begin
+  if (Handle <> nil) and Assigned(ft_segmented_control_add_segment) then
+    Result := ft_segmented_control_add_segment(Handle, PChar(AText), PChar(AIcon))
+  else
+    Result := -1;
+end;
+
+procedure TFtSegmentedControl.Clear();
+begin
+  if (Handle <> nil) and Assigned(ft_segmented_control_clear) then
+    ft_segmented_control_clear(Handle);
+end;
+
+function TFtSegmentedControl.GetSegmentCount: Integer;
+begin
+  if (Handle <> nil) and Assigned(ft_segmented_control_get_count) then
+    Result := ft_segmented_control_get_count(Handle)
+  else
+    Result := 0;
+end;
+
+function TFtSegmentedControl.GetSelectedIndex: Integer;
+begin
+  if (Handle <> nil) and Assigned(ft_segmented_control_get_selected_index) then
+    Result := ft_segmented_control_get_selected_index(Handle)
+  else
+    Result := -1;
+end;
+
+procedure TFtSegmentedControl.SetSelectedIndex(AIndex: Integer);
+begin
+  if (Handle <> nil) and Assigned(ft_segmented_control_set_selected_index) then
+    ft_segmented_control_set_selected_index(Handle, AIndex);
+end;
+
+function TFtSegmentedControl.GetSelectedText: string;
+var
+  p: PChar;
+begin
+  if (Handle <> nil) and Assigned(ft_segmented_control_get_selected_text) then
+  begin
+    p := ft_segmented_control_get_selected_text(Handle);
+    if p <> nil then Result := string(p) else Result := '';
+  end
+  else
+    Result := '';
+end;
+
+function TFtSegmentedControl.GetSegmentText(AIndex: Integer): string;
+var
+  p: PChar;
+begin
+  if (Handle <> nil) and Assigned(ft_segmented_control_get_segment_text) then
+  begin
+    p := ft_segmented_control_get_segment_text(Handle, AIndex);
+    if p <> nil then Result := string(p) else Result := '';
+  end
+  else
+    Result := '';
+end;
+
+procedure TFtSegmentedControl.SetSegmentText(AIndex: Integer; const AText: string);
+begin
+  if (Handle <> nil) and Assigned(ft_segmented_control_set_segment_text) then
+    ft_segmented_control_set_segment_text(Handle, AIndex, PChar(AText));
+end;
+
+function TFtSegmentedControl.GetItemsText: string;
+begin
+  Result := '';
+end;
+
+procedure TFtSegmentedControl.SetItemsText(const AValue: string);
+begin
+  if (Handle <> nil) and Assigned(ft_segmented_control_set_items_text) then
+    ft_segmented_control_set_items_text(Handle, PChar(AValue));
+end;
+
+function TFtSegmentedControl.GetCornerRadius: Double;
+begin
+  if (Handle <> nil) and Assigned(ft_segmented_control_get_corner_radius) then
+    Result := ft_segmented_control_get_corner_radius(Handle)
+  else
+    Result := 6.0;
+end;
+
+procedure TFtSegmentedControl.SetCornerRadius(AValue: Double);
+begin
+  if (Handle <> nil) and Assigned(ft_segmented_control_set_corner_radius) then
+    ft_segmented_control_set_corner_radius(Handle, AValue);
+end;
+
+procedure TFtSegmentedControl.AttachToNotebook(ANotebook: TFtWidget);
+var
+  nbHandle: Pointer;
+begin
+  if ANotebook <> nil then nbHandle := ANotebook.Handle else nbHandle := nil;
+  if (Handle <> nil) and Assigned(ft_segmented_control_attach_notebook) then
+    ft_segmented_control_attach_notebook(Handle, nbHandle);
+end;
+
+procedure TFtSegmentedControl.SetOnSelect(AValue: TFtSegmentSelectEvent);
+begin
+  FOnSelect := AValue;
+  if (Handle <> nil) and Assigned(ft_segmented_control_on_select) then
+    ft_segmented_control_on_select(Handle, @SegmentSelectDispatcher, Self);
+end;
+
+procedure TFtSegmentedControl.DoSelect(AIndex: Integer; const AText: string);
+begin
+  if Assigned(FOnSelect) then
+    FOnSelect(Self, AIndex, AText);
 end;
 
 { TFtSlider }
