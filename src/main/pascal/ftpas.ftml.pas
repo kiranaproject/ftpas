@@ -984,7 +984,7 @@ begin
     W := TFtLabel.Create(AParentWidget, ix, iy, iw, ih, txt);
     if AItem.HasProperty('selectable') then
       TFtLabel(W).Selectable := AItem.GetPropertyAsBoolean('selectable', True);
-    colorStr := AItem.GetPropertyAsString('color');
+    colorStr := AItem.GetPropertyAsString('color', '');
     if colorStr <> '' then
     begin
       W.Style := 'color: ' + colorStr + ';';
@@ -2112,9 +2112,17 @@ begin
         curColor := item.GetPropertyAsString('color', '');
         if curColor <> FBindings[i].LastColor then
         begin
-          W.Style := 'color: ' + curColor + ';';
-          if ParseHexColor(curColor, cr, cg, cb) then
-            TFtLabel(W).SetColor(cr, cg, cb);
+          if curColor <> '' then
+          begin
+            W.Style := 'color: ' + curColor + ';';
+            if ParseHexColor(curColor, cr, cg, cb) then
+              TFtLabel(W).SetColor(cr, cg, cb);
+          end
+          else
+          begin
+            W.Style := '';
+            TFtLabel(W).ResetColor();
+          end;
           FBindings[i].LastColor := curColor;
         end;
       end;
