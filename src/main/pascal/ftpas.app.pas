@@ -69,6 +69,7 @@ type
     function  LoadThemeDir(const ADirPath: string): Boolean;
     function  LoadCssFile(const AFilePath: string): Boolean;
     function  LoadCssString(const ACssString: string): Boolean;
+    function  AppendCssString(const ACssString: string): Boolean;
 
     { Icon Registry }
     function  GetIconSvg(const AName: string; ADarkMode: Boolean = False): string;
@@ -427,6 +428,14 @@ function TFtApp.LoadCssString(const ACssString: string): Boolean;
 begin
   if Assigned(ft_style_load_css_string) then
     Result := ft_style_load_css_string(PChar(ACssString)) <> 0
+  else
+    Result := False;
+end;
+
+function TFtApp.AppendCssString(const ACssString: string): Boolean;
+begin
+  if Assigned(ft_style_append_css_string) then
+    Result := ft_style_append_css_string(PChar(ACssString)) <> 0
   else
     Result := False;
 end;
