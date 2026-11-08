@@ -966,6 +966,10 @@ begin
       TFtButton(W).IsToggle := AItem.GetPropertyAsBoolean('isToggle', False);
     if AItem.HasProperty('toggled') or AItem.HasProperty('checked') then
       TFtButton(W).Toggled := AItem.GetPropertyAsBoolean('toggled', AItem.GetPropertyAsBoolean('checked', False));
+    if AItem.HasProperty('flat') then
+      TFtButton(W).Flat := AItem.GetPropertyAsBoolean('flat', False);
+    if AItem.HasProperty('drawFrame') and not AItem.GetPropertyAsBoolean('drawFrame', True) then
+      TFtButton(W).Flat := True;
     AttachSignals(AItem, W);
   end
   else if (AItem.TypeName = 'Text') or (AItem.TypeName = 'Label') then
@@ -1825,8 +1829,15 @@ begin
     styleStr := AItem.GetPropertyAsString('style', '');
     if styleStr <> '' then
       W.Style := styleStr;
-    if AItem.HasProperty('drawFrame') and (W is TFtContainer) then
-      TFtContainer(W).DrawFrame := AItem.GetPropertyAsBoolean('drawFrame', False);
+    if AItem.HasProperty('drawFrame') then
+    begin
+      if W is TFtContainer then
+        TFtContainer(W).DrawFrame := AItem.GetPropertyAsBoolean('drawFrame', False)
+      else if W is TFtButton then
+        TFtButton(W).Flat := not AItem.GetPropertyAsBoolean('drawFrame', True);
+    end;
+    if AItem.HasProperty('flat') and (W is TFtButton) then
+      TFtButton(W).Flat := AItem.GetPropertyAsBoolean('flat', False);
   end;
 
   // Apply child layout constraints on native widget
