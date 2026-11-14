@@ -749,6 +749,7 @@ function TFtFTMLHost.BuildWidgetTree(AItem: TFloriaFTMLItem; AParentWidget: TFtW
 var
   W: TFtWidget;
   ix, iy, iw, ih: Integer;
+  iconW, iconH: Integer;
   rad, minVal, maxVal, curVal, frac, sp: Double;
   cr, cg, cb: Double;
   cap, txt, ph, colorStr, borderCol: string;
@@ -967,6 +968,13 @@ begin
     if not AItem.HasProperty('text') and not AItem.HasProperty('icon') then
       cap := 'Button';
     W := TFtButton.Create(AParentWidget, ix, iy, iw, ih, cap);
+    if AItem.HasProperty('iconWidth') or AItem.HasProperty('iconHeight') or AItem.HasProperty('iconSize') then
+    begin
+      iconW := Round(AItem.GetPropertyAsNumber('iconWidth', AItem.GetPropertyAsNumber('iconSize', 0.0)));
+      iconH := Round(AItem.GetPropertyAsNumber('iconHeight', AItem.GetPropertyAsNumber('iconSize', 0.0)));
+      if (iconW > 0) and (iconH > 0) then
+        TFtButton(W).SetIconSize(iconW, iconH);
+    end;
     if AItem.HasProperty('icon') then
     begin
       kindStr := AItem.GetPropertyAsString('icon');
