@@ -303,6 +303,8 @@ type
     procedure SetReadOnly(AValue: Boolean);
     function  GetCornerRadius: Double;
     procedure SetCornerRadius(AValue: Double);
+    function  GetCursorPos: Integer;
+    procedure SetCursorPos(AValue: Integer);
 
     procedure SetOnChange(AValue: TFtTextChangeEvent);
     procedure SetOnSubmit(AValue: TFtTextSubmitEvent);
@@ -317,6 +319,7 @@ type
 
     property Text: string read GetText write SetText;
     property Placeholder: string read GetPlaceholder write SetPlaceholder;
+    property CursorPos: Integer read GetCursorPos write SetCursorPos;
     property ReadOnly: Boolean read GetReadOnly write SetReadOnly;
     property CornerRadius: Double read GetCornerRadius write SetCornerRadius;
 
@@ -1605,6 +1608,20 @@ procedure TFtEntry.SetCornerRadius(AValue: Double);
 begin
   if (Handle <> nil) and Assigned(ft_entry_set_corner_radius) then
     ft_entry_set_corner_radius(Handle, AValue);
+end;
+
+function TFtEntry.GetCursorPos: Integer;
+begin
+  if (Handle <> nil) and Assigned(ft_entry_get_cursor_pos) then
+    Result := ft_entry_get_cursor_pos(Handle)
+  else
+    Result := 0;
+end;
+
+procedure TFtEntry.SetCursorPos(AValue: Integer);
+begin
+  if (Handle <> nil) and Assigned(ft_entry_set_cursor_pos) then
+    ft_entry_set_cursor_pos(Handle, AValue);
 end;
 
 procedure TFtEntry.SelectAll();

@@ -110,6 +110,7 @@ type
     procedure TestFTMLExtendedClientAreaDeclarative();
     procedure TestFTMLUrlEntryDeclarative();
     procedure TestFTMLRemainingWidgetsDeclarative();
+    procedure TestFTMLEntryCursorPositionPreservedOnEdit();
   end;
 
 { TLibraryLoadingTest }
@@ -1653,6 +1654,48 @@ begin
     AssertEquals('Reactive PathBar Path', '/var/log', pb.Path);
     AssertEquals('Reactive Scrubber Value', 85.0, sc.Value, 0.001);
     AssertEquals('Reactive Table SelectedRow', 1, tb.SelectedRow);
+  finally
+    win.Free();
+  end;
+end;
+
+procedure TFTMLIntegrationTest.TestFTMLEntryCursorPositionPreservedOnEdit();
+var
+  win: TFtFTMLWindow;
+  w: TFtWidget;
+  entry: TFtEntry;
+const
+  SRC =
+    'Window {' + LineEnding +
+    '  id: mainWindow;' + LineEnding +
+    '  Entry {' + LineEnding +
+    '    id: testInput;' + LineEnding +
+    '    width: 250; height: 32;' + LineEnding +
+    '    text: "abcdefgh";' + LineEnding +
+    '  }' + LineEnding +
+    '}' + LineEnding;
+begin
+  win := TFtFTMLWindow.Create(400, 300, 'Entry Cursor Test');
+  try
+    AssertNotNull('FTML root item should load', win.LoadString(SRC));
+    w := win.FindWidget('testInput');
+    AssertNotNull('testInput widget should exist', w);
+    AssertTrue('testInput must be TFtEntry', w is TFtEntry);
+
+    entry := TFtEntry(w);
+    AssertEquals('Initial entry text matches FTML', 'abcdefgh', entry.Text);
+
+    // Set cursor to position 3 (between 'c' and 'd')
+    entry.CursorPos := 3;
+    AssertEquals('Cursor positioned at 3', 3, entry.CursorPos);
+
+    // SyncProperties must not reset cursor position on entry
+    win.SyncProperties();
+    AssertEquals('Cursor position must be preserved at 3 after sync pass', 3, entry.CursorPos);
+
+    // Setting identical text on widget must not reset cursor position
+    entry.Text := 'abcdefgh';
+    AssertEquals('Cursor position must be preserved at 3 after identical text assignment', 3, entry.CursorPos);
   finally
     win.Free();
   end;

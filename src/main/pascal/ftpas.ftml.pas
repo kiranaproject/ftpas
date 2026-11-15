@@ -2195,18 +2195,32 @@ begin
       W := FBindings[i].Widget;
       if (item = nil) or (W = nil) then Continue;
 
-      // Text property sync (Buttons, Labels, Entries)
-      if (W is TFtButton) or (W is TFtLabel) or (W is TFtEntry) then
+      // Text property sync (Buttons, Labels, Entries, TextAreas)
+      if (W is TFtButton) or (W is TFtLabel) or (W is TFtEntry) or (W is TFtTextArea) then
       begin
         curText := item.GetPropertyAsString('text', '');
         if curText <> FBindings[i].LastText then
         begin
           if W is TFtButton then
-            TFtButton(W).Caption := curText
+          begin
+            if TFtButton(W).Caption <> curText then
+              TFtButton(W).Caption := curText;
+          end
           else if W is TFtLabel then
-            TFtLabel(W).Text := curText
+          begin
+            if TFtLabel(W).Text <> curText then
+              TFtLabel(W).Text := curText;
+          end
           else if W is TFtEntry then
-            TFtEntry(W).Text := curText;
+          begin
+            if TFtEntry(W).Text <> curText then
+              TFtEntry(W).Text := curText;
+          end
+          else if W is TFtTextArea then
+          begin
+            if TFtTextArea(W).Text <> curText then
+              TFtTextArea(W).Text := curText;
+          end;
           FBindings[i].LastText := curText;
         end;
       end;
