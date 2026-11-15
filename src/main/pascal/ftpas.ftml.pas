@@ -753,7 +753,7 @@ var
   rad, minVal, maxVal, curVal, frac, sp: Double;
   cr, cg, cb: Double;
   cap, txt, ph, colorStr, borderCol: string;
-  dirStr, wrapStr, justStr, alignStr: string;
+  dirStr, wrapStr, justStr, alignStr, sbModeStr: string;
   colTmpl, rowTmpl: string;
   padVal, colGap, rowGap, flexG, flexS, flexB: Double;
   nCols, nRows, gridC, gridR, colS, rowS: Integer;
@@ -877,7 +877,19 @@ begin
       ih := AParentWidget.Height - iy;
 
     W := TFtContainer.Create(AParentWidget, ix, iy, iw, ih);
-    TFtContainer(W).ScrollBarMode := ftsbmNone;
+    sbModeStr := LowerCase(AItem.GetPropertyAsString('scrollBarMode', ''));
+    if (sbModeStr = 'vertical') or (sbModeStr = 'verticalonly') then
+      TFtContainer(W).ScrollBarMode := ftsbmVerticalOnly
+    else if (sbModeStr = 'horizontal') or (sbModeStr = 'horizontalonly') then
+      TFtContainer(W).ScrollBarMode := ftsbmHorizontalOnly
+    else if (sbModeStr = 'autoboth') or (sbModeStr = 'both') or (sbModeStr = 'auto') then
+      TFtContainer(W).ScrollBarMode := ftsbmAutoBoth
+    else if (sbModeStr = 'none') then
+      TFtContainer(W).ScrollBarMode := ftsbmNone
+    else if AItem.GetPropertyAsBoolean('scrollable', False) then
+      TFtContainer(W).ScrollBarMode := ftsbmVerticalOnly
+    else
+      TFtContainer(W).ScrollBarMode := ftsbmNone;
     padVal := AItem.GetPropertyAsNumber('padding', 0.0);
     TFtContainer(W).SetPadding(padVal, padVal);
     rad := AItem.GetPropertyAsNumber('radius', 0.0);
@@ -910,7 +922,19 @@ begin
       ih := AParentWidget.Height - iy;
 
     W := TFtPanel.Create(AParentWidget, ix, iy, iw, ih);
-    TFtPanel(W).ScrollBarMode := ftsbmNone;
+    sbModeStr := LowerCase(AItem.GetPropertyAsString('scrollBarMode', ''));
+    if (sbModeStr = 'vertical') or (sbModeStr = 'verticalonly') then
+      TFtPanel(W).ScrollBarMode := ftsbmVerticalOnly
+    else if (sbModeStr = 'horizontal') or (sbModeStr = 'horizontalonly') then
+      TFtPanel(W).ScrollBarMode := ftsbmHorizontalOnly
+    else if (sbModeStr = 'autoboth') or (sbModeStr = 'both') or (sbModeStr = 'auto') then
+      TFtPanel(W).ScrollBarMode := ftsbmAutoBoth
+    else if (sbModeStr = 'none') then
+      TFtPanel(W).ScrollBarMode := ftsbmNone
+    else if AItem.GetPropertyAsBoolean('scrollable', False) then
+      TFtPanel(W).ScrollBarMode := ftsbmVerticalOnly
+    else
+      TFtPanel(W).ScrollBarMode := ftsbmNone;
     padVal := AItem.GetPropertyAsNumber('padding', 8.0);
     TFtPanel(W).SetPadding(padVal, padVal);
     rad := AItem.GetPropertyAsNumber('radius', 6.0);
