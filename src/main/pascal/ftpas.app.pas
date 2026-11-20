@@ -46,6 +46,7 @@ type
     procedure SetShadow(AValue: Boolean);
     function  GetDarkMode: Boolean;
     procedure SetDarkMode(AValue: Boolean);
+    function  GetExplicitDarkMode: Boolean;
 
     function  GetClipboardText: string;
     procedure SetClipboardText(const AValue: string);
@@ -94,6 +95,7 @@ type
     property CornerRadius: Double read GetCornerRadius write SetCornerRadius;
     property Shadow: Boolean read GetShadow write SetShadow;
     property DarkMode: Boolean read GetDarkMode write SetDarkMode;
+    property ExplicitDarkMode: Boolean read GetExplicitDarkMode;
 
     property ClipboardText: string read GetClipboardText write SetClipboardText;
 
@@ -333,6 +335,14 @@ begin
     if AValue then v := 1 else v := 0;
     ft_theme_set_dark_mode(v);
   end;
+end;
+
+function TFtApp.GetExplicitDarkMode: Boolean;
+begin
+  if Assigned(ft_theme_is_explicit_dark_mode) then
+    Result := ft_theme_is_explicit_dark_mode() <> 0
+  else
+    Result := False;
 end;
 
 function TFtApp.GetClipboardText: string;

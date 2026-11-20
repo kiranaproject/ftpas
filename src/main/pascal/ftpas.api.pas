@@ -868,6 +868,7 @@ var
   ft_theme_load_dir: function(dirpath: PChar): cint32; cdecl;
   ft_theme_set_dark_mode: procedure(enabled: cint32); cdecl;
   ft_theme_get_dark_mode: function(): cint32; cdecl;
+  ft_theme_is_explicit_dark_mode: function(): cint32; cdecl;
   ft_theme_has_dark_mode: function(theme_name: PChar): cint32; cdecl;
 
   { CSS & Animation }
@@ -1860,6 +1861,7 @@ begin
   Pointer(ft_theme_load_dir) := BindFunc('ft_theme_load_dir');
   Pointer(ft_theme_set_dark_mode) := BindFunc('ft_theme_set_dark_mode');
   Pointer(ft_theme_get_dark_mode) := BindFunc('ft_theme_get_dark_mode');
+  Pointer(ft_theme_is_explicit_dark_mode) := BindFunc('ft_theme_is_explicit_dark_mode');
   Pointer(ft_theme_has_dark_mode) := BindFunc('ft_theme_has_dark_mode');
 
   { Bind CSS & Animation }
