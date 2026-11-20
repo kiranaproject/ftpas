@@ -538,6 +538,8 @@ var
   ft_entry_clear_selection: procedure(entry: TFtWidget); cdecl;
   ft_entry_get_cursor_pos: function(entry: TFtWidget): cint32; cdecl;
   ft_entry_set_cursor_pos: procedure(entry: TFtWidget; pos: cint32); cdecl;
+  ft_entry_set_is_password: procedure(entry: TFtWidget; is_password: cint32); cdecl;
+  ft_entry_get_is_password: function(entry: TFtWidget): cint32; cdecl;
 
   { PathBar }
   ft_path_bar_create: function(parent: TFtWidget; x, y, w, h: cint32; initial_path: PChar): TFtWidget; cdecl;
@@ -1533,6 +1535,8 @@ begin
   Pointer(ft_entry_clear_selection) := BindFunc('ft_entry_clear_selection');
   Pointer(ft_entry_get_cursor_pos) := BindFunc('ft_entry_get_cursor_pos');
   Pointer(ft_entry_set_cursor_pos) := BindFunc('ft_entry_set_cursor_pos');
+  Pointer(ft_entry_set_is_password) := BindFunc('ft_entry_set_is_password');
+  Pointer(ft_entry_get_is_password) := BindFunc('ft_entry_get_is_password');
 
   { Bind PathBar }
   Pointer(ft_path_bar_create) := BindFunc('ft_path_bar_create');

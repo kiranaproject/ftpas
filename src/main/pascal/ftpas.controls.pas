@@ -305,6 +305,8 @@ type
     procedure SetCornerRadius(AValue: Double);
     function  GetCursorPos: Integer;
     procedure SetCursorPos(AValue: Integer);
+    function  GetIsPassword: Boolean;
+    procedure SetIsPassword(AValue: Boolean);
 
     procedure SetOnChange(AValue: TFtTextChangeEvent);
     procedure SetOnSubmit(AValue: TFtTextSubmitEvent);
@@ -320,6 +322,7 @@ type
     property Text: string read GetText write SetText;
     property Placeholder: string read GetPlaceholder write SetPlaceholder;
     property CursorPos: Integer read GetCursorPos write SetCursorPos;
+    property IsPassword: Boolean read GetIsPassword write SetIsPassword;
     property ReadOnly: Boolean read GetReadOnly write SetReadOnly;
     property CornerRadius: Double read GetCornerRadius write SetCornerRadius;
 
@@ -1622,6 +1625,25 @@ procedure TFtEntry.SetCursorPos(AValue: Integer);
 begin
   if (Handle <> nil) and Assigned(ft_entry_set_cursor_pos) then
     ft_entry_set_cursor_pos(Handle, AValue);
+end;
+
+function TFtEntry.GetIsPassword: Boolean;
+begin
+  if (Handle <> nil) and Assigned(ft_entry_get_is_password) then
+    Result := (ft_entry_get_is_password(Handle) <> 0)
+  else
+    Result := False;
+end;
+
+procedure TFtEntry.SetIsPassword(AValue: Boolean);
+begin
+  if (Handle <> nil) and Assigned(ft_entry_set_is_password) then
+  begin
+    if AValue then
+      ft_entry_set_is_password(Handle, 1)
+    else
+      ft_entry_set_is_password(Handle, 0);
+  end;
 end;
 
 procedure TFtEntry.SelectAll();
